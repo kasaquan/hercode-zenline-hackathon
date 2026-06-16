@@ -6,6 +6,12 @@ Build a reusable system that detects emerging retail opportunities from global a
 
 Use a Swiss outdoor retailer as the starter case. Your system should identify promising outdoor-retail opportunities, explain where each opportunity appears first, assess whether it can transfer into Switzerland or DACH, and recommend what the retailer should do next.
 
+## Why This Case Matters
+
+Outdoor retail is a perfect test case because the market moves across culture, climate, technology, and lifestyle at the same time. A useful opportunity might start as a creator trend in Korea, a search spike in Germany, a new material from a niche brand, a marketplace bestseller in the US, or a local Swiss weather-driven need.
+
+Retailers need this kind of system because waiting for clean sales history is often too late. By the time a trend is obvious in internal data, competitors may already own the category, supplier access, or customer mindshare.
+
 ## What Counts As An Opportunity
 
 An opportunity can be a:
@@ -18,6 +24,15 @@ An opportunity can be a:
 - Brand or supplier lead.
 - Price or assortment gap.
 - Content or community angle.
+
+Example opportunity spaces:
+
+- Fast-changing Alpine weather and lightweight protection.
+- Trail running, hiking, commuting, and travel crossover products.
+- Repair, rental, resale, and circular gear models.
+- Women's outdoor fit, safety, comfort, or community needs.
+- Compact outdoor products for city-based weekend adventurers.
+- New materials, packability, hydration, sun protection, or layering systems.
 
 ## Recommended Flow
 

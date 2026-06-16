@@ -1,10 +1,12 @@
 # HerCode Zenline Hackathon
 
-Build a reusable opportunity-detection system for retail.
+Build the retail radar that spots the next outdoor opportunity before it becomes obvious.
 
 ## Challenge
 
-Your mission is to build a system that detects emerging retail opportunities from global and local market signals.
+Retail teams are flooded with weak signals: TikTok clips, search spikes, niche communities, new materials, marketplace bestsellers, competitor drops, weather shifts, and regional lifestyle changes. The hard part is not finding more data. It is turning noisy signals into one clear answer: what should a retailer do next?
+
+Your mission is to build a reusable system that detects emerging retail opportunities from global and local market signals.
 
 Use the starter case of a Swiss outdoor retailer to prove that the system works, but design it so the same method could be reused for another industry, market, product category, retailer, or brand.
 
@@ -12,7 +14,7 @@ The best submissions are not one-off research reports. They show a repeatable fl
 
 ## Starter Case
 
-Detect promising emerging outdoor retail opportunities for Switzerland or DACH.
+Detect promising emerging outdoor retail opportunities for Switzerland or DACH. Think beyond "new product list": your system could uncover a new activity, product format, material, rental model, merchandising idea, local assortment gap, brand partnership, or community trend.
 
 Your system should answer:
 
@@ -22,6 +24,14 @@ Your system should answer:
 - Could the trend transfer into Switzerland or DACH?
 - What should the retailer test, buy, launch, or monitor next?
 - How reusable is the system beyond outdoor retail?
+
+Example directions:
+
+- A social-first hiking accessory that is emerging in Korea or Japan and could transfer to Swiss day hikers.
+- A weather-adaptive product bundle for increasingly unpredictable Alpine conditions.
+- A repair, rental, second-hand, or circular retail opportunity linked to outdoor gear.
+- A lightweight commuter-outdoor crossover product gaining traction in Nordic or UK markets.
+- A competitor assortment gap where Swiss demand signals exist but local supply is thin.
 
 ## Event Timeline
 
@@ -36,6 +46,8 @@ Your system should answer:
 - 17:45 CEST: Back in the office for finalist presentations and awards
 
 Teams should have 2-4 people. Discord is the main communication channel before and during the hackathon.
+
+Intro session deck: [`slides/hercode-zenline-hackathon-intro.pptx`](slides/hercode-zenline-hackathon-intro.pptx).
 
 ## Required Deliverables
 
@@ -63,7 +75,7 @@ The jury will review the code and submission artifacts from your fork.
 
 ## What You Can Build
 
-You can build any useful part of the opportunity-detection system, for example:
+You can build any useful part of the opportunity-detection system. Pick the part where your team can create the most leverage:
 
 - Custom research agents or scripts.
 - Scrapers for retailer, marketplace, social, or publication sources.
@@ -74,6 +86,17 @@ You can build any useful part of the opportunity-detection system, for example:
 - Report generators that convert structured evidence into a business-ready recommendation.
 
 A strong demo does not need to replace the whole flow. Improving one source, analysis step, scoring module, API, UI, or handoff artifact can be enough if the result is reusable and well demonstrated.
+
+## Demo Target
+
+By the end, the jury should be able to open your fork and understand:
+
+- What your system found.
+- Why the opportunity matters now.
+- Which sources support it.
+- Whether it can realistically work in Switzerland or DACH.
+- What the retailer should test next.
+- How your approach could run again for another category or market.
 
 ## Suggested Evidence Sources
 
