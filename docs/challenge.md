@@ -4,7 +4,7 @@
 
 Build a reusable system that detects emerging retail opportunities from global and local market signals.
 
-Use a Swiss outdoor retailer as the starter case. Your system should identify promising outdoor-retail opportunities, explain where each opportunity appears first, assess whether it can transfer into Switzerland or DACH, and recommend what the retailer should do next.
+Use a Swiss outdoor retailer as the shared challenge scenario. Your system should identify promising outdoor-retail opportunities, explain where each opportunity appears first, assess whether it can transfer into Switzerland or DACH, and recommend what the retailer should do next.
 
 ## Why This Case Matters
 

@@ -8,7 +8,7 @@ Retail teams are flooded with weak signals: TikTok clips, search spikes, niche c
 
 Your mission is to build a reusable system that detects emerging retail opportunities from global and local market signals.
 
-Use the starter case of a Swiss outdoor retailer to prove that the system works, but design it so the same method could be reused for another industry, market, product category, retailer, or brand.
+Use the shared scenario of a Swiss outdoor retailer to prove that the system works, but design it so the same method could be reused for another industry, market, product category, retailer, or brand.
 
 The best submissions are not one-off research reports. They show a repeatable flow where inputs can change and the method still works.
 
@@ -23,7 +23,7 @@ Together, the two tracks cover the retail loop: market signals become assortment
 
 Companion B2C challenge: [`raffaelefarinaro/hercode-scandit-challenge`](https://github.com/raffaelefarinaro/hercode-scandit-challenge).
 
-## Starter Case
+## Challenge Scenario
 
 Detect promising emerging outdoor retail opportunities for Switzerland or DACH. Think beyond "new product list": your system could uncover a new activity, product format, material, rental model, merchandising idea, local assortment gap, brand partnership, or community trend.
 
