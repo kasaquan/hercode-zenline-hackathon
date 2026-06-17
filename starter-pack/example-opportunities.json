@@ -1,38 +1,38 @@
 [
   {
     "rank": 1,
-    "opportunity": "Weather-adaptive lightweight shell bundle",
-    "first_observed_market": "DACH / Nordics",
-    "evidence_summary": "Directional example: repeated interest in packable rain protection, fast weather shifts, and lightweight hiking layers.",
+    "opportunity": "Scout PFAS-free waterproof shell brands",
+    "first_observed_market": "Nordics / DACH",
+    "evidence_summary": "Directional example: new waterproof-material claims and sustainability positioning appear across brand launches and retailer listings.",
     "evidence_urls": [],
-    "transferability": "Likely relevant for Swiss day hikes and commuter-to-trail use, especially around unpredictable alpine weather.",
+    "transferability": "Relevant for Switzerland if performance, price, and trust signals are strong enough for alpine use.",
     "coverage_status": "unknown",
-    "recommended_action": "Validate demand with local search data, competitor assortment scan, and a small landing-page or campaign test.",
+    "recommended_action": "Identify 5-10 rising brands, compare technical claims and price bands, then shortlist supplier conversations.",
     "confidence": "medium",
-    "risks": "Example row only. Needs real source URLs, price checks, and local assortment coverage."
+    "risks": "Example row only. Needs real source URLs, performance validation, price checks, and local assortment coverage."
   },
   {
     "rank": 2,
-    "opportunity": "Repair and resale service for premium outdoor gear",
-    "first_observed_market": "UK / DACH",
-    "evidence_summary": "Directional example: circularity, repairability, and second-hand outdoor gear appear as recurring customer and brand themes.",
+    "opportunity": "Expand wide-fit hiking boot assortment",
+    "first_observed_market": "US / UK / DACH",
+    "evidence_summary": "Directional example: fit-specific footwear searches, reviews, and competitor filters indicate a possible underserved segment.",
     "evidence_urls": [],
-    "transferability": "Potentially strong in Switzerland where premium gear prices and sustainability expectations are high.",
+    "transferability": "Potentially relevant in Switzerland if local competitors under-serve width, comfort, and size availability.",
     "coverage_status": "unknown",
-    "recommended_action": "Map competitor services, estimate operational requirements, and test with one category such as jackets or backpacks.",
+    "recommended_action": "Scan competitor ranges, review demand signals, and test a focused buying expansion in high-need sizes.",
     "confidence": "low",
-    "risks": "Needs operational feasibility, margin, and partner validation."
+    "risks": "Needs real demand evidence, return-rate thinking, and supplier availability."
   },
   {
     "rank": 3,
-    "opportunity": "Trail-to-city technical fleece and commuter layer",
-    "first_observed_market": "US / UK / Japan",
-    "evidence_summary": "Directional example: outdoor aesthetics crossing into daily commuter wear and travel gear.",
+    "opportunity": "Test fastpacking packs as a growing product type",
+    "first_observed_market": "US / Japan / DACH",
+    "evidence_summary": "Directional example: fastpacking appears across specialist content, trail-running communities, and lightweight backpack launches.",
     "evidence_urls": [],
-    "transferability": "Could fit Swiss city-based weekend adventurers if price, fit, and office-friendly design are right.",
+    "transferability": "Could fit Swiss customers who combine trail running, hut trips, and compact weekend routes.",
     "coverage_status": "unknown",
-    "recommended_action": "Scan social and retailer signals, then compare against local assortment gaps and price points.",
+    "recommended_action": "Compare product formats, weights, volumes, and price bands, then recommend whether to test a small assortment.",
     "confidence": "medium",
-    "risks": "May be fashion-led and short-lived; needs evidence separating durable demand from style noise."
+    "risks": "May remain niche; needs competitor availability, local event/community evidence, and margin assessment."
   }
 ]

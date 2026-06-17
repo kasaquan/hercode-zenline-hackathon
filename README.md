@@ -27,13 +27,16 @@ Your system should answer:
 - What should the retailer test, buy, launch, or monitor next?
 - How reusable is the system beyond outdoor retail?
 
-Example directions:
+Start by asking what a Swiss outdoor retailer would actually want to know. For example:
 
-- A social-first hiking accessory that is emerging in Korea or Japan and could transfer to Swiss day hikers.
-- A weather-adaptive product bundle for increasingly unpredictable Alpine conditions.
-- A repair, rental, second-hand, or circular retail opportunity linked to outdoor gear.
-- A lightweight commuter-outdoor crossover product gaining traction in Nordic or UK markets.
-- A competitor assortment gap where Swiss demand signals exist but local supply is thin.
+- Which rising brands should the buying team watch, contact, or onboard?
+- Which product types are growing in other markets before they become obvious in Switzerland?
+- Which materials, technologies, or product features are becoming commercially meaningful?
+- Which price bands, formats, sizes, or use cases are undercovered by local retailers?
+- Which assortment gaps could create differentiation, margin, or customer loyalty?
+- Which trends are just noise, and which deserve a test, supplier conversation, or deeper analysis?
+
+Based on those questions, define your own methodology: choose sources, collect evidence, score signals, assess Swiss/DACH transferability, and turn the best findings into clear retail actions.
 
 ## Event Timeline
 

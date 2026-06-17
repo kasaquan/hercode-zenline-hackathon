@@ -3,59 +3,59 @@
   "category": "outdoor retail",
   "themes": [
     {
-      "theme": "weather-adaptive alpine gear",
+      "theme": "rising outdoor brands",
       "keywords": [
-        "packable rain shell",
-        "ultralight hardshell",
-        "stormproof hiking jacket",
-        "weather adaptive layering",
-        "alpine commuter jacket"
+        "emerging outdoor brands",
+        "new hiking brands",
+        "independent outdoor gear brands",
+        "fast growing trail running brands",
+        "premium outdoor startups"
       ],
-      "why_it_might_matter": "Swiss outdoor customers face increasingly variable weather and may need lighter, more flexible protection."
+      "why_it_might_matter": "Retailers want to know which brands could become future supplier, collaboration, or assortment opportunities."
     },
     {
-      "theme": "trail-to-city crossover",
+      "theme": "growing product types",
       "keywords": [
-        "gorpcore commuter backpack",
-        "trail running vest everyday",
-        "approach shoes city hiking",
-        "outdoor commute gear",
-        "technical fleece everyday"
+        "ultralight hiking umbrella",
+        "trail running vest",
+        "fastpacking backpack",
+        "approach shoes",
+        "packable camp chair"
       ],
-      "why_it_might_matter": "Outdoor gear is increasingly worn across work, travel, and weekend use cases."
+      "why_it_might_matter": "Product-type momentum can help buyers decide where to expand, test, or reduce assortment."
     },
     {
-      "theme": "circular outdoor retail",
+      "theme": "materials and technologies",
       "keywords": [
-        "outdoor gear repair service",
-        "hiking gear rental",
-        "second hand outdoor equipment",
-        "used hiking boots resale",
-        "repairable outdoor clothing"
+        "PFAS free waterproof jacket",
+        "recycled nylon outdoor gear",
+        "merino blend base layer",
+        "graphene hiking jacket",
+        "bio based outdoor materials"
       ],
-      "why_it_might_matter": "Repair, rental, and resale models can create loyalty and new revenue without relying only on new product drops."
+      "why_it_might_matter": "Material and technology shifts affect sourcing, price, positioning, and customer trust."
     },
     {
-      "theme": "women-specific outdoor needs",
+      "theme": "assortment gaps",
       "keywords": [
-        "women hiking safety gear",
-        "women specific hiking backpack",
-        "female fit outdoor jacket",
-        "women trail running community",
-        "outdoor gear for women fit"
+        "wide fit hiking boots",
+        "women specific backpack fit",
+        "kids technical hiking gear",
+        "plus size outdoor clothing",
+        "lightweight rain pants"
       ],
-      "why_it_might_matter": "Fit, safety, comfort, and community signals can reveal underserved segments."
+      "why_it_might_matter": "Assortment gaps can reveal underserved customers and commercially useful differentiation."
     },
     {
-      "theme": "compact weekend adventure",
+      "theme": "price bands and formats",
       "keywords": [
-        "microadventure gear",
-        "weekend hiking kit",
-        "compact camping gear",
-        "lightweight travel hiking",
-        "one bag outdoor weekend"
+        "affordable hardshell jacket",
+        "premium ultralight tent",
+        "entry level hiking boots",
+        "high margin outdoor accessories",
+        "outdoor gear bundles"
       ],
-      "why_it_might_matter": "City-based customers may want compact gear for short, frequent trips rather than expedition-level equipment."
+      "why_it_might_matter": "Retailers care whether opportunities sit in accessible, premium, margin-rich, or bundle-friendly price bands."
     }
   ]
 }
