@@ -26,6 +26,7 @@ from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, List, Tuple
 
 from ..scout_agent.schema import RecommendationRow, write_recommendations
+from . import analytics
 
 
 DEFAULT_PROFILE = {
@@ -763,10 +764,22 @@ def next_step_text(action: str, opportunity: str) -> str:
 def build_recommendations(signals: List[Dict[str, Any]], profile: Dict[str, Any], request: Dict[str, Any]) -> Dict[str, Any]:
     groups = group_signals(signals, request)
     rich_recs = []
+    analytics_results = analytics.analyze_signals(signals, use_embeddings=False, verbose=False)
 
     for opportunity, group in groups.items():
         rows = group["signals"]
         scores = score_group(group, profile)
+        base_score = scores["final_score"]
+
+        adjusted_score, adjustment_notes = analytics.adjust_final_score(
+            base_score,
+            analytics_results,
+            opportunity
+        )
+
+        scores["final_score"] = adjusted_score  # ← overwrites with adjusted score
+        scores["analytics_adjustment"] = adjustment_notes
+        
         action = choose_action(opportunity, scores, rows, profile)
         confidence = confidence_label(scores)
         risks, missing = risks_and_missing(opportunity, scores, rows, profile, action)
@@ -808,6 +821,27 @@ def build_recommendations(signals: List[Dict[str, Any]], profile: Dict[str, Any]
                 "source_count": len(set(r.get("source", "") for r in rows if r.get("source"))),
                 "signal_count": len(rows),
                 "deduplication_note": f"Grouped {len(rows)} signal row(s) under canonical opportunity: {opportunity}",
+                 "analytics_adjustment": scores.get("analytics_adjustment", {}),
+                "analytics": {
+                    "trend": analytics_results["trend"].get("trend"),
+                    "trend_velocity": analytics_results["trend"].get("velocity"),  # ← NEW: rate of change
+                    "saturation": analytics_results["saturation"].get("saturation_level"),
+                    "saturation_score": analytics_results["saturation"].get("brand_concentration"),  # ← NEW: 0-1 score
+                    "competitor_count": analytics_results["saturation"].get("competitor_count"),  # ← NEW: how many brands
+                    "diversity": analytics_results["diversity"].get("diversity_score"),
+                    "diversity_detail": {  # ← NEW: breakdown
+                        "unique_keywords": analytics_results["diversity"].get("unique_keywords"),
+                        "unique_brands": analytics_results["diversity"].get("unique_brands"),
+                    },
+                    "source_quality": analytics_results["source_quality"].get("quality_score"),
+                    "anomalies": analytics_results["anomalies"].get("anomaly_count"),
+                    "anomaly_list": analytics_results["anomalies"].get("anomalies", []),  # ← NEW: what's unusual
+                    "geography": analytics_results["geography"].get("concentration"),  # ← NEW: CH-focused vs global
+                    "clustering": {  # ← NEW: deduplication stats
+                        "clusters": analytics_results["clustering"].get("cluster_count"),
+                    },
+                }
+            
             }
         )
 
