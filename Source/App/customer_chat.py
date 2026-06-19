@@ -148,8 +148,25 @@ if user_input:
     
     if st.session_state.conversation_stage == "company_link":
         user_lower = user_input.lower().strip()
-        
-        if "skip" in user_lower or "no" in user_lower or "later" in user_lower:
+
+        def _looks_like_url(text: str) -> bool:
+            t = text.strip()
+            if t.lower().startswith(("http://", "https://", "www.")):
+                return True
+            # Bare domain like "ochsnersport.ch" — a dotted token with a TLD,
+            # no spaces.
+            if " " not in t and "." in t:
+                tld = t.rstrip("/").rsplit(".", 1)[-1]
+                return tld.isalpha() and 2 <= len(tld) <= 24
+            return False
+
+        def _normalize_url(text: str) -> str:
+            t = text.strip()
+            if not t.lower().startswith(("http://", "https://")):
+                t = "https://" + t
+            return t
+
+        if user_lower in ("skip", "no", "later") or user_lower.startswith(("skip", "no ", "later")):
             st.session_state.company_info["company_link"] = None
             st.session_state.conversation_stage = "market"
             
@@ -166,11 +183,12 @@ if user_input:
                 st.markdown(response)
             add_message("assistant", response)
         
-        elif user_input.startswith("http"):
-            st.session_state.company_info["company_link"] = user_input
+        elif _looks_like_url(user_input):
+            normalized = _normalize_url(user_input)
+            st.session_state.company_info["company_link"] = normalized
             st.session_state.conversation_stage = "market"
-            
-            response = f"""✓ Got your website: **{user_input}**
+
+            response = f"""✓ Got your website: **{normalized}**
 
 Now, **which market(s) are you active in?** Please choose one:
 - **CH** - Switzerland only
