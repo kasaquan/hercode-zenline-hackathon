@@ -1,0 +1,8 @@
+anthropic>=0.40.0
+requests>=2.31.0
+pytrends>=4.9.2
+pandas>=2.0.0
+streamlit>=1.30.0
+# Optional (clustering upgrade — the scaffold runs without it):
+# sentence-transformers>=2.2.2
+# scikit-learn>=1.3.0
