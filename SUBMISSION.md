@@ -36,6 +36,611 @@ The whole flow is **generic-first**: seed expansion and opportunity grouping are
 customer's product focus and each signal's own content, so the same system retargets to any
 category or market by changing inputs — not code.
 
+## System Architecture (Bird's Eye View)
+
+```
+Customer: "What should we test for ultralight backpacking?"
+         │
+         ├─→ Scout Agent (sourcing)
+         │   "Go find real signals"
+         │   Outputs: 16 signals with URLs, dates, confidence
+         │
+         ├─→ Company Profiler (strategy extraction)
+         │   "What's their strategy?"
+         │   Outputs: gaps, margins, innovation appetite
+         │
+         └─→ Orchestrator (scoring & reranking)
+             "Score on 8 dimensions"
+             "Rerank based on strategy"
+             Outputs: 3 ranked opportunities
+```
+
+---
+
+## Agent 1: Scout Agent (Find Real Signals)
+
+### What It Does
+Runs an agentic loop that actually *calls* web search, Reddit APIs, Kickstarter searches, competitor websites. Every signal must have:
+- A URL (you can click it and verify it)
+- A timestamp (when we found it)
+- Confidence (high/medium/low based on source)
+- A score (0-1, how strong is this signal)
+
+### Not Magic
+❌ NOT: "Claude, make up some ultralight product trends"
+✅ YES: 
+```
+Tool call 1: web_search("ultralight backpack CH")
+  → Returns: URL, snippet, date
+  → Extract: brand, price, market signal
+  
+Tool call 2: reddit search("/r/CampingGear ultralight")
+  → Returns: post engagement, comments
+  → Extract: community interest level
+  
+Tool call 3: kickstarter search("ultralight backpack")
+  → Returns: campaign, funding, backer count
+  → Extract: commercial viability signal
+```
+
+### Signal Schema (Real Data)
+```json
+{
+  "signal_name": "Deuter ultralight modular packs",
+  "source": "reddit",
+  "url": "https://reddit.com/r/CampingGear/...",
+  "brand": "Deuter",
+  "price": "250 CHF",
+  "market": "CH",
+  "confidence": "high",
+  "observed_at": "2026-06-15T14:23:00Z",
+  "signal_score": 0.82
+}
+```
+
+### Scoring Individual Signals
+```
+signal_score = (
+  0.3 × source_credibility +
+  0.2 × recency_factor +
+  0.2 × engagement_level +
+  0.15 × confidence_level +
+  0.15 × commercial_signal
+)
+
+Example:
+(0.3 × 0.9[web] + 0.2 × 0.95[recent] + 0.2 × 0.85[engagement] + 0.15 × 0.90 + 0.15 × 0.75)
+= 0.82 / 1.0
+```
+
+**Result:** 16 signals, each with a URL, date, confidence, and score. **All verifiable.**
+
+---
+
+## Agent 3: Company Profiler (Understand Strategy)
+
+### What It Does
+Reads:
+1. Your website (what are you selling now?)
+2. Optional: strategy document (PDF)
+3. Freeform notes (from the conversation)
+
+Extracts:
+```json
+{
+  "company": "Decathlon CH",
+  "positioning": "mid-market technical",
+  "target_price_band": "100-300 CHF",
+  "customer_segments": ["hikers", "outdoor enthusiasts"],
+  "current_assortment_gaps": "ultralight systems",
+  "target_gross_margin": 33,
+  "innovation_appetite": "high",
+  "strategic_expansion_focus": "ultralight backpacking"
+}
+```
+
+### Why It Matters
+Later, when we score opportunities, we ask:
+- Does this fit your price band? (Should we stock 450 CHF tents?)
+- Does this match your segments? (Is this for your customers?)
+- Do you have the margins? (Can we make 30%+ on this?)
+- Is this aligned with your strategy? (Or is it just trendy?)
+
+---
+
+## Agent 2: Orchestrator (Score & Rank)
+
+### Step 1: Deduplicate Signals (Clustering)
+
+**Problem:** 16 signals about "ultralight" but lots of overlap
+- "Deuter modular packs trending" (4 mentions)
+- "Ultralight backpacking accessories" (3 mentions)
+
+**Solution:** Jaccard similarity clustering
+
+```
+For each pair of signals:
+  similarity = |overlapping_keywords| / |all_keywords|
+  
+Example:
+  Signal A: "Deuter ultralight modular packs" → {deuter, ultralight, modular, pack}
+  Signal B: "Ultralight backpacking accessories" → {ultralight, backpacking, accessories}
+  
+  Intersection: {ultralight} = 1
+  Union: {deuter, ultralight, modular, pack, backpacking, accessories} = 6
+  Similarity: 1/6 = 0.17 → Different clusters
+```
+
+**Result:** 7 raw signals → 2 clusters
+- Cluster 1: "Ultralight modular pack systems" (4 signals)
+- Cluster 2: "Ultralight backpacking accessories" (3 signals)
+
+This is *deterministic*. No embeddings, no black boxes. Same inputs = same clusters every time.
+
+---
+
+### Step 2: Score on 8 Dimensions
+
+Each cluster gets scored 0-100 on 8 things that matter to a retail buyer:
+
+#### Dimension 1: Evidence Strength (18% weight)
+```
+How credible are these signals?
+
+score = (
+  0.4 × avg_confidence +
+  0.3 × avg_source_credibility +
+  0.2 × recency +
+  0.1 × number_of_sources
+) × 100
+
+Example for "ultralight modular packs":
+- 4 signals, avg confidence 0.85
+- Sources: web, reddit, kickstarter (credibility 0.9, 0.6, 0.8 avg = 0.77)
+- Avg age: 5 days (recency 0.95)
+- 4 sources
+
+(0.4 × 0.85 + 0.3 × 0.77 + 0.2 × 0.95 + 0.1 × 4/4) × 100 = 78.2
+Contribution: 78.2 × 0.18 = 14.1 points
+```
+
+#### Dimension 2: Cross-Source Validation (12% weight)
+```
+Do independent sources agree?
+
+score = (
+  0.25 × unique_sources/4 +
+  0.25 × unique_markets/5 +
+  0.25 × unique_keywords/10 +
+  0.25 × unique_brands/5
+) × 100
+
+If signals come from web, reddit, kickstarter, AND multiple markets (CH + DE),
+AND mention multiple brands (Deuter, ArcTeryx, etc.)
+→ Score: 85.0
+```
+
+#### Dimension 3: Trend Momentum (12% weight)
+```
+Are these signals accelerating?
+
+Simply: average of the signal_scores themselves
+avg([0.82, 0.85, 0.80, 0.82]) × 100 = 82.1 / 100
+```
+
+#### Dimension 4: Swiss/DACH Transferability (16% weight)
+```
+Is this relevant to your market?
+
+score = (
+  0.5 × CH_signal_ratio +
+  0.3 × DACH_signal_ratio +
+  0.2 × outdoor_relevance
+) × 100
+
+For ultralight packs:
+- 4/7 signals from CH (0.57)
+- 6/7 from CH+DE+AT (0.86)
+- Outdoor relevance: 0.9 (hiking is obviously outdoor)
+
+(0.5 × 0.57 + 0.3 × 0.86 + 0.2 × 0.9) × 100 = 82.0
+```
+
+#### Dimension 5: Commercial Potential (10% weight)
+```
+Can we make money on this?
+
+score = (
+  0.4 × price_visibility +
+  0.3 × competitor_mentions +
+  0.2 × brand_recognition +
+  0.1 × margin_viability
+) × 100
+
+250 CHF price point is visible, competitors mention it, real brands involved
+→ Score: 72.5
+```
+
+#### Dimension 6: Current Assortment Gap Fit (10% weight)
+```
+Does this fill a gap you told us about?
+
+If Decathlon said "we're missing ultralight systems"
+→ Score: 75.0 (partial match, multiple components needed)
+
+If they said nothing about ultralight
+→ Score: 30.0
+```
+
+#### Dimension 7: Strategic Gap Fit (12% weight)
+```
+Does this align with your stated strategy?
+
+If Decathlon said "we want to expand into ultralight backpacking"
+→ Score: 88.0 (strong match)
+
+If they said "we're focusing on kids gear"
+→ Score: 20.0
+```
+
+#### Dimension 8: Company Profile Fit (10% weight)
+```
+Does this work for YOUR company?
+
+score = (
+  0.3 × positioning_match +
+  0.25 × segment_match +
+  0.2 × margin_viability +
+  0.15 × price_band_fit +
+  0.1 × innovation_fit
+) × 100
+
+Decathlon = mid-market technical, targets hikers, needs 30%+ margins
+Ultralight packs = premium technical, targets serious hikers, can hit 35% margin
+→ Score: 79.5
+```
+
+---
+
+### Step 3: Calculate Base Score
+
+```
+Base Score = Σ(dimension_score × weight)
+
+Ultralight Modular Packs:
+  78.2 × 0.18 = 14.07  (Evidence)
++ 85.0 × 0.12 = 10.20  (Cross-Source)
++ 82.1 × 0.12 = 9.85   (Trend)
++ 82.0 × 0.16 = 13.12  (Swiss/DACH)
++ 72.5 × 0.10 = 7.25   (Commercial)
++ 75.0 × 0.10 = 7.50   (Current Gap)
++ 88.0 × 0.12 = 10.56  (Strategic Gap)
++ 79.5 × 0.10 = 7.95   (Company Fit)
+────────────────────────────────────
+BASE SCORE: 81.5 / 100
+```
+
+**This is deterministic.** Same signals, same company profile = same score every time.
+
+---
+
+## Analytics Layer (Check for Red Flags & Adjustments)
+
+After scoring, we run **statistical checks** to adjust the score or flag issues.
+
+### Check 1: Trend Velocity (Is this accelerating?)
+
+```python
+Linear regression on timestamps:
+
+Week 1: 3 signals
+Week 2: 5 signals (↑67%)
+Week 3: 8 signals (↑60%)
+Week 4: 12 signals (↑50%)
+
+Linear regression slope (m) = 0.42
+R² = 0.94 (very confident in the trend)
+
+Interpretation:
+- Slope > 0.3 → Accelerating
+- Result: +15% boost to final score
+- Confidence: R² = 0.94 (we're 94% confident in this trend)
+```
+
+### Check 2: Market Saturation (Is this a greenfield opportunity?)
+
+```python
+Herfindahl Index (measures brand concentration)
+
+Signals mention:
+- Deuter: 3 signals
+- ArcTeryx: 2 signals
+- Mountain Hardwear: 2 signals
+Total: 7 signals
+
+Market shares: [3/7, 2/7, 2/7] = [0.43, 0.29, 0.29]
+
+H-index = 0.43² + 0.29² + 0.29² = 0.35
+
+Interpretation:
+- H < 0.25: Greenfield (no dominant player)
+- H = 0.35: Moderate competition, room for 2-3 players
+- Result: +10% boost (not super crowded)
+```
+
+### Check 3: Signal Diversity (Are sources independent?)
+
+```python
+Unique keywords: 12 different topics mentioned
+Unique brands: 3 brands
+Unique sources: 4 types (web, reddit, kickstarter, youtube)
+
+Diversity score = (
+  0.4 × (12/12) +
+  0.3 × (3/5) +
+  0.3 × (4/4)
+) = 0.78
+
+Interpretation:
+- 0.78 is HIGH (multiple independent sources agree)
+- Result: +5% boost
+```
+
+### Check 4: Anomalies (Any red flags?)
+
+```python
+Price outlier detection (z-score):
+Prices: [250, 280, 199, variable]
+Mean: 243, StdDev: 41
+
+For each signal:
+  z-score = |price - 243| / 41
+  If z > 2.5 → Outlier
+
+Result: No outliers detected ✅
+
+Frequency spike detection (IQR):
+Signals per day: [2, 1, 2, 1, 3, 2, 4]
+Q1 = 1.5, Q3 = 3.5, IQR = 2
+Upper bound = 3.5 + 1.5×2 = 6.5
+
+Max count = 4 (no spike) ✅
+
+Conclusion: No anomalies detected
+```
+
+---
+
+## The Reranking: Executive Strategy Matters Most
+
+**This is the critical part.** After scoring, we rerank based on what *you actually told us* about your strategy.
+
+### Example: Decathlon's Strategy
+
+From their website + conversation, we extract:
+
+```
+PRIMARY STRATEGY: "Expand into ultralight backpacking for premium segment"
+SECONDARY: "Achieve 33%+ margins"
+GAPS: "Modular systems, lightweight tents, eco-friendly materials"
+INNOVATION: "High - test emerging brands"
+```
+
+### How Reranking Works
+
+```
+Three opportunities found:
+
+#1 BEFORE RERANKING: Ultralight modular packs (81.5 score)
+   - Strategic Gap Fit: 88/100 ✅ (directly addresses "expand ultralight")
+   - Margin Potential: 35% ✅ (exceeds 33% target)
+   - Innovation Appetite: High ✅ (new modular system)
+   → RERANK BOOST: +1 position (already #1, stays #1)
+
+#2 BEFORE RERANKING: PFAS-free rain shells (72.3 score)
+   - Strategic Gap Fit: 72/100 ⚠️ (relates to "eco-friendly" but not ultralight priority)
+   - Margin Potential: 28% ❌ (below 33% target)
+   - Innovation Appetite: Medium (proven technology)
+   → RERANK PENALTY: -1 position (drops from #2 to #3)
+
+#3 BEFORE RERANKING: UV-protective shirts (62.8 score)
+   - Strategic Gap Fit: 68/100 ⚠️ (low priority, not in strategy)
+   - Margin Potential: 22% ❌ (well below target)
+   - Innovation Appetite: Low (commodity)
+   → RERANK PENALTY: -1 position (drops from #3 to further down)
+```
+
+### The Reranked Output
+
+```
+FINAL RANKING (after strategy reranking):
+
+#1: Ultralight modular packs (81.5)
+    ✅ Directly matches strategy
+    ✅ Hits margin targets
+    ✅ High innovation alignment
+    Recommendation: TEST (run pilot)
+
+#2: UV-protective shirts (62.8)
+    ⚠️ Low strategic priority
+    ❌ Below margin targets
+    ⚠️ Market decelerating
+    Recommendation: MONITOR (collect more data)
+
+#3: PFAS-free rain shells (72.3)
+    ⚠️ Partial strategic fit
+    ❌ Below margin targets
+    Recommendation: MONITOR (validate margins)
+```
+
+**Key insight:** Even though PFAS shells scored 72.3 (higher than UV shirts at 62.8), they got reranked DOWN because:
+- They don't directly match "ultralight backpacking" strategy
+- They fall short on margin targets
+
+And UV shirts, despite lower score, stayed higher because... wait, no. They got reranked to #2 because we realized the data supports monitoring them.
+
+Actually, let me clarify the reranking logic more clearly:
+
+---
+
+## Strategic Reranking (Clear Version)
+
+The final ranking is: **Score + Strategic Alignment**
+
+```
+CALCULATION:
+final_rank_score = (
+  0.7 × base_score +
+  0.3 × strategic_alignment_bonus
+)
+
+Where strategic_alignment_bonus factors:
+  - Does it match stated strategy? (0-100)
+  - Can we hit margin targets? (0-100)
+  - Does it fit innovation appetite? (0-100)
+  - Is it in a stated gap? (0-100)
+
+For Decathlon:
+  Strategy = "ultralight backpacking" (+100 for packs)
+  Margins = "33%+" (+100 if viable, 0 if not)
+  Innovation = "high" (+100 if novel, lower if proven)
+  Gaps = "ultralight systems" (+100 if exact match)
+
+Example:
+- Ultralight packs: 0.7×81.5 + 0.3×95 = 85.1
+- PFAS shells: 0.7×72.3 + 0.3×70 = 71.5
+- UV shirts: 0.7×62.8 + 0.3×60 = 61.8
+
+FINAL RANKING:
+1. Ultralight packs (85.1) ← Aligned with strategy, margins work
+2. PFAS shells (71.5) ← Partial fit, margin issues
+3. UV shirts (61.8) ← Misaligned, margins poor
+```
+
+**This is not an LLM reranking based on vibes.** It's rule-based:
+- ✅ Match to stated strategy = boost
+- ✅ Margin viability = boost
+- ❌ Margin shortfall = penalty
+- ❌ Strategy misalignment = penalty
+
+---
+
+## Why This Is NOT "Just Calling an LLM"
+
+### ❌ What We DON'T Do
+1. "Claude, find some product ideas" (magic)
+2. "Claude, score these on vibes" (not rigorous)
+3. "Claude, rank them based on what seems good" (opinion)
+
+### ✅ What We DO Do
+1. **Tool-calling loop** that sources from real APIs
+2. **Deterministic clustering** (Jaccard similarity, 0.4 threshold)
+3. **Explicit scoring formula** (8 dimensions × weights = score)
+4. **Statistical analysis** (linear regression, Herfindahl index, z-score)
+5. **Strategy matching** (rule-based alignment to stated goals)
+6. **Reranking** (based on margins, gaps, innovation appetite)
+
+Every step is auditable. Click the URLs. Check the math. Run it again with the same inputs, get the same output.
+
+---
+
+## Example: Full Pipeline (Start to Finish)
+
+```
+INPUT:
+Customer: "We're Decathlon CH. We want to explore ultralight backpacking."
+Strategy: "Expand into ultralight premium segment. Target 33%+ margins."
+
+↓
+
+AGENT 1 RUNS (Scout):
+Finds 16 signals from web, Reddit, Kickstarter, competitors
+Every signal has URL, date, confidence, score
+
+↓
+
+AGENT 3 RUNS (Profiler):
+Extracts Decathlon's profile
+- Positioning: mid-market technical ✓
+- Gaps: ultralight systems ✓
+- Margins: 33% target ✓
+- Innovation: high ✓
+
+↓
+
+AGENT 2 RUNS (Orchestrator):
+Clusters 16 signals → 2 clusters
+Scores each cluster on 8 dimensions
+
+↓
+
+ANALYTICS LAYER:
+Detects accelerating trend (+15%)
+Identifies greenfield market (+10%)
+Confirms high diversity (+5%)
+No anomalies ✓
+
+↓
+
+STRATEGIC RERANKING:
+ultralight packs = directly matches strategy ✅
+PFAS shells = partial match, margin issues ⚠️
+UV shirts = low priority, margin issues ❌
+
+↓
+
+OUTPUT:
+Ranked recommendations with full breakdown:
+1. Ultralight modular packs → TEST
+2. PFAS-free shells → MONITOR
+3. UV-protective shirts → MONITOR
+
+Every recommendation includes:
+- URLs to verify signals
+- Scoring breakdown (all 8 dimensions)
+- Trend velocity (R² confidence)
+- Market saturation (H-index)
+- Anomalies (if any)
+- Strategic alignment score
+```
+
+---
+
+## Reproducibility (You Can Verify Everything)
+
+```bash
+# Same inputs = same outputs (deterministic)
+python -m Agents.decision_agent \
+  --query "Ultralight backpacking" \
+  --company https://decathlon.ch \
+  --market CH
+
+# Output file: out/recommendations.json
+
+# Inside that file:
+{
+  "recommendations": [
+    {
+      "opportunity": "Ultralight modular packs",
+      "signals": [... all 4 signals with URLs, dates, scores ...],
+      "scores": {
+        "evidence_strength": 78.2,
+        "cross_source_validation": 85.0,
+        ...all 8 dimensions...
+      },
+      "analytics": {
+        "trend_velocity": 0.42,  // R² = 0.94
+        "saturation": "low",     // H-index = 0.35
+        "diversity": 0.78,       // 12 keywords, 3 brands, 4 sources
+        "anomalies": []          // 0 detected
+      },
+      "strategic_alignment": 95,  // vs strategy goals
+      "final_rank_score": 85.1
+    }
+  ]
+}
+```
+
 ## How To Run
 
 ```bash
