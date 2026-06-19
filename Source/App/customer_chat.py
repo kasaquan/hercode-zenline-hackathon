@@ -16,8 +16,7 @@ load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from Agents.agent_3 import extract_company_profile
-from Agents.scout_agent.scout import run as scout_run
+from Agents.decision_agent.pipeline import run_pipeline
 
 st.set_page_config(
     page_title="Zenline | Retail Recommender",
@@ -120,6 +119,20 @@ def _read_signals_csv():
     except Exception as e:
         print(f"Error reading signals.csv: {e}")
         return []
+
+
+def _read_profile_json():
+    """Read company_profile.json written by the pipeline (Agent 3 output)."""
+    root = Path(__file__).resolve().parents[2]
+    profile_path = root / "out" / "company_profile.json"
+    if not profile_path.exists():
+        return {"company_name": "Unknown"}
+    try:
+        with open(profile_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading company_profile.json: {e}")
+        return {"company_name": "Unknown"}
 
 
 user_input = st.chat_input("Type your response...")
@@ -258,46 +271,66 @@ I'm extracting your company profile and sourcing emerging signals. This may take
     # ========================================================================
     
     if st.session_state.conversation_stage == "analyzing":
-        with st.spinner("Processing..."):
-            # Agent 3: Extract company profile
+        info = st.session_state.company_info
+        market = info.get("market") or "DACH"
+        if market == "OTHER":
+            market = "DACH"
+        product_type = info.get("product_type") or "outdoor products"
+        company_link = info.get("company_link") or ""
+
+        # Synthesize the Agent 2 query so parse_customer_query extracts a clean
+        # product_focus + Scout seeds (matches the "… is looking for decision support on …" pattern).
+        company_label = company_link or "A Swiss outdoor retailer"
+        query = f"{company_label} is looking for decision support on {product_type}"
+
+        with st.spinner("Running Scout + Profiler in parallel, then scoring with the Decision Agent…"):
             try:
-                profile = extract_company_profile(
-                    company_link=st.session_state.company_info.get("company_link", ""),
-                    pdf_content=st.session_state.company_info.get("company_docs"),
-                    user_notes=st.session_state.company_info.get("notes"),
-                    verbose=False
+                # Agent 2 orchestrator: parse → fan out Scout + Profiler (parallel) → join → score.
+                result = run_pipeline(
+                    query=query,
+                    market=market,
+                    company_link=company_link,
+                    pdf_content=info.get("company_docs"),
+                    user_notes=info.get("notes"),
+                    max_steps=12,
+                    write=True,
+                    verbose=False,
                 )
-                st.session_state.company_profile = profile
+                st.session_state.recommendations = result
+                st.session_state.pipeline_error = None
             except Exception as e:
-                profile = {"error": str(e), "company_name": "Unknown"}
-                st.session_state.company_profile = profile
-            
-            # Scout Agent: Source signals directly with product_type as seeds
-            try:
-                market = st.session_state.company_info.get("market", "DACH")
-                product_type = st.session_state.company_info.get("product_type", "outdoor retail")
-                
-                scout_run(market=market, seeds=product_type, max_steps=12)
-                
-                signals = _read_signals_csv()
-                st.session_state.signals = signals
-            except Exception as e:
-                st.session_state.signals = []
-        
+                st.session_state.recommendations = {"recommendations": [], "error": str(e)}
+                st.session_state.pipeline_error = str(e)
+
+            # Profile + raw signals are written to disk by the pipeline — load them for the
+            # Profile and Signals tabs.
+            st.session_state.company_profile = _read_profile_json()
+            st.session_state.signals = _read_signals_csv()
+
         st.session_state.conversation_stage = "results"
-        
+
         company_name = st.session_state.company_profile.get("company_name", "Your Company")
         signal_count = len(st.session_state.signals)
-        
-        results_msg = f"""✅ **Analysis complete for {company_name}!**
+        rec_count = len(st.session_state.recommendations.get("recommendations", []))
 
-I found **{signal_count} emerging signals** in the {st.session_state.company_info.get('market', 'DACH')} market.
+        if st.session_state.pipeline_error:
+            results_msg = f"""⚠️ **Analysis ran into an error.**
+
+```
+{st.session_state.pipeline_error}
+```
+
+Check that `ANTHROPIC_API_KEY` is set and try **New Analysis** below."""
+        else:
+            results_msg = f"""✅ **Analysis complete for {company_name}!**
+
+I sourced **{signal_count} emerging signals** in the **{market}** market and ranked them into **{rec_count} recommendations** tailored to your company.
 
 📊 **Your results are ready** — see the tabs below:
 - **Profile**: Key metrics, gaps, strategic direction
-- **Signals**: Emerging opportunities ranked by score
-- **Recommendations**: Personalized insights (coming next)"""
-        
+- **Signals**: Raw emerging signals (Agent 1)
+- **Recommendations**: Ranked actions — what to launch, test, or monitor (Agent 2)"""
+
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(results_msg)
         add_message("assistant", results_msg)
@@ -363,8 +396,79 @@ if st.session_state.conversation_stage == "results":
                     st.caption(signal.get("notes", "No notes"))
     
     with tab3:
-        st.info("🚀 Agent 2 will rank signals by relevance to your company")
-        st.markdown("**Coming next:** Personalized recommendations based on your profile")
+        rec_data = st.session_state.get("recommendations", {})
+        recs = rec_data.get("recommendations", [])
+
+        if rec_data.get("error"):
+            st.error(f"Decision Agent error: {rec_data['error']}")
+        elif not recs:
+            st.info("No recommendations were produced. Try a different product focus or run a New Analysis.")
+        else:
+            _ACTION_STYLE = {
+                "Launch": "🟢", "Test": "🟡", "Buy": "🟢",
+                "Contact supplier/brand": "🟡", "Contact supplier": "🟡",
+                "Monitor": "🔵", "Reposition existing assortment": "🟠", "Ignore": "⚪",
+            }
+            st.write(f"Ranked **{len(recs)}** opportunities for your company:")
+
+            for rec in recs:
+                action = rec.get("recommended_action", "Monitor")
+                badge = _ACTION_STYLE.get(action.split(" — ")[0].strip(), "🔵")
+                final = rec.get("scores", {}).get("final_score", 0)
+                with st.expander(
+                    f"**#{rec.get('rank', '?')} · {rec.get('opportunity', 'Opportunity')}** "
+                    f"— {badge} {action.split(' — ')[0].strip()} · {final:.0f}/100",
+                    expanded=(rec.get("rank") == 1),
+                ):
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.metric("Final score", f"{final:.0f}/100")
+                        st.metric("Confidence", rec.get("confidence", "—"))
+                    with c2:
+                        st.metric("First seen", rec.get("first_observed_market", "—"))
+                        st.metric("Coverage", rec.get("coverage_status", "—"))
+                    with c3:
+                        st.metric("Signals", rec.get("signal_count", 0))
+                        st.metric("Sources", rec.get("source_count", 0))
+
+                    st.markdown(f"**🎯 Recommended action:** {action}")
+                    if rec.get("next_step"):
+                        st.caption(rec["next_step"])
+
+                    st.markdown("**Evidence**")
+                    st.write(rec.get("evidence_summary", "—"))
+                    for url in rec.get("evidence_urls", []):
+                        st.markdown(f"- [{url}]({url})")
+
+                    st.markdown("**Transferability**")
+                    st.write(rec.get("transferability", "—"))
+
+                    if rec.get("company_alignment_summary"):
+                        st.markdown("**Fit to your company**")
+                        st.write(rec["company_alignment_summary"])
+
+                    risks = rec.get("risks", [])
+                    if risks:
+                        st.markdown("**Risks & missing evidence**")
+                        for r in risks:
+                            st.markdown(f"- {r}")
+
+                    with st.popover("🔬 Score breakdown"):
+                        scores = {k: v for k, v in rec.get("scores", {}).items()
+                                  if isinstance(v, (int, float))}
+                        st.json(scores)
+
+            st.divider()
+            csv_path = Path(__file__).resolve().parents[2] / "out" / "recommendations.csv"
+            if csv_path.exists():
+                with open(csv_path, "rb") as f:
+                    st.download_button(
+                        "⬇️ Download recommendations.csv (Zenline contract)",
+                        data=f.read(),
+                        file_name="recommendations.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
     
     st.divider()
     

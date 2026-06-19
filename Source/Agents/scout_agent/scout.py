@@ -89,7 +89,12 @@ def run(market: str, seeds: str, max_steps: int = 16) -> List[SignalRow]:
     messages = [{"role": "user", "content": _kickoff(market, seeds)}]
     trace = []
 
+    container_id = None  # server tools (web_search) run in a container; must be echoed back
     for _step in range(max_steps):
+        create_kwargs = {}
+        if container_id:
+            create_kwargs["container"] = container_id
+
         resp = client.messages.create(
             model=MODEL,
             max_tokens=16000,
@@ -98,7 +103,15 @@ def run(market: str, seeds: str, max_steps: int = 16) -> List[SignalRow]:
             messages=messages,
             thinking={"type": "adaptive", "display": "summarized"},
             output_config={"effort": "high"},
+            **create_kwargs,
         )
+
+        # Once a container-backed tool (web_search) runs, every follow-up request in the
+        # same turn must reuse its container id, or the API rejects the continuation with
+        # "container_id is required when there are pending tool uses".
+        resp_container = getattr(resp, "container", None)
+        if resp_container is not None and getattr(resp_container, "id", None):
+            container_id = resp_container.id
 
         for b in resp.content:
             if b.type == "thinking":
