@@ -7,13 +7,14 @@ GDELT), scores what it finds, and emits curated Signal Rows. It does NOT produce
 recommendations — a downstream Buyer agent (Agent B) consumes out/signals.csv.
 
 Run:
-    python -m src.scout --market DACH --seeds "trail running, approach shoes, gravel bikepacking"
+    python -m Source.Agents.scout_agent --market DACH --seeds "trail running, approach shoes, gravel bikepacking"
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+from pathlib import Path
 
 import anthropic
 
@@ -21,6 +22,11 @@ from . import tools
 from .schema import write_signals
 
 MODEL = "claude-opus-4-8"
+
+# Repo root (…/Source/Agents/scout_agent/scout.py -> parents[3]). Anchoring here
+# means artifacts always land in <repo>/out regardless of the launch directory.
+ROOT = Path(__file__).resolve().parents[3]
+OUT_DIR = ROOT / "out"
 
 # web_search is a Claude-hosted server tool — returns real, cited URLs directly.
 WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search", "max_uses": 8}
@@ -64,8 +70,9 @@ def _kickoff(market: str, seeds: str) -> str:
 def _load_env() -> None:
     if os.environ.get("ANTHROPIC_API_KEY"):
         return
-    if os.path.exists(".env"):
-        for line in open(".env", encoding="utf-8"):
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        for line in open(env_path, encoding="utf-8"):
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
@@ -133,20 +140,20 @@ def run(market: str, seeds: str, max_steps: int = 16) -> None:
 
 
 def _persist(trace) -> None:
-    os.makedirs("out", exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     emitted = tools.get_emitted_signals()
     # Deliverable: the agent's curated signal rows. Fall back to raw auto-captures
     # if the agent emitted nothing (safety net — still real, sourced data).
     deliverable = emitted if emitted else tools.get_raw_signals()
-    write_signals(deliverable, "out/signals.csv")
-    write_signals(tools.get_raw_signals(), "out/signals_raw.csv")
+    write_signals(deliverable, str(OUT_DIR / "signals.csv"))
+    write_signals(tools.get_raw_signals(), str(OUT_DIR / "signals_raw.csv"))
 
-    with open("out/trace.json", "w", encoding="utf-8") as f:
+    with open(OUT_DIR / "trace.json", "w", encoding="utf-8") as f:
         json.dump(trace, f, indent=2)
 
-    print(f"\nWrote out/signals.csv ({len(deliverable)} curated rows), "
-          f"out/signals_raw.csv ({len(tools.get_raw_signals())} raw rows), out/trace.json")
+    print(f"\nWrote {OUT_DIR}/signals.csv ({len(deliverable)} curated rows), "
+          f"signals_raw.csv ({len(tools.get_raw_signals())} raw rows), trace.json")
 
 
 def main() -> None:

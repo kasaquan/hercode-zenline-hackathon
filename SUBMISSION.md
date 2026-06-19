@@ -31,10 +31,10 @@ pip install -r requirements.txt
 cp .env.example .env            # then add your ANTHROPIC_API_KEY (never commit it)
 
 # 1. Run Agent A (Scout) — sources signals, writes out/signals.csv (+ signals_raw.csv, trace.json)
-python -m src.scout --market DACH --seeds "trail running, approach shoes, ski touring, gravel bikepacking, merino base layers"
+python -m Source.Agents.scout_agent --market DACH --seeds "trail running, approach shoes, ski touring, gravel bikepacking, merino base layers"
 
-# 2. Open the dashboard
-streamlit run app.py
+# 2. Open the dashboard (separate terminal)
+streamlit run Source/Agents/scout_agent/dashboard.py
 ```
 
 ## Inputs
@@ -78,7 +78,7 @@ as a row in `out/signals.csv` with its own `url` and `created_by_tool`. Evidence
 
 Swap three things to retarget the system: the **seed keywords** (`--seeds`), the **market geo**
 (`--market`, mapped to a Google Trends region), and the **community sources** (subreddit list in
-`src/tools.py`). The contract-shaped output and the Scout loop are domain-agnostic — the same
+`Source/Agents/scout_agent/tools.py`). The contract-shaped output and the Scout loop are domain-agnostic — the same
 architecture works for beauty, home, or any other vertical by repointing the sources.
 
 ## Known Limitations
@@ -108,5 +108,5 @@ seed keywords ─▶ Agent A — Scout (claude-opus-4-8, tool-calling loop)
 **`signal_score` scale:** `0.0–1.0`, where
 `emerging_score = clamp01( velocity × log1p(engagement) / 6 × event_lift )` —
 `velocity` = normalized search/community growth, `engagement` = social interaction volume,
-`event_lift` ≥ 1.0 when a related global event boosts the category (see `src/score.py`).
+`event_lift` ≥ 1.0 when a related global event boosts the category (see `Source/Agents/scout_agent/score.py`).
 **`confidence`:** `high | medium | low`.

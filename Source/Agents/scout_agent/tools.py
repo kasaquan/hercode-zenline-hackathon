@@ -29,6 +29,7 @@ import hashlib
 import json
 import os
 import time
+from pathlib import Path
 from typing import Dict, List
 
 import requests
@@ -36,7 +37,8 @@ import requests
 from .schema import SignalRow
 from .score import emerging_score
 
-CACHE_DIR = "data/cache"
+# Anchor the cache to the repo root so it's shared/stable regardless of CWD.
+CACHE_DIR = str(Path(__file__).resolve().parents[3] / "data" / "cache")
 _HEADERS = {"User-Agent": "hercode-zenline-scout/0.1 (hackathon research)"}
 
 # Raw signals auto-captured by the fetch tools (provenance backup).

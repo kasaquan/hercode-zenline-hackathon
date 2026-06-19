@@ -1,23 +1,27 @@
-"""Retail Radar dashboard — Agent A (Scout) sourced signals + the agent's reasoning trace.
+"""Retail Radar dashboard — Scout Agent sourced signals + the agent's reasoning trace.
 
-Run:  streamlit run app.py
-Reads the artifacts written by `python -m src.scout`.
+Run:  streamlit run Source/Agents/scout_agent/dashboard.py
+Reads the artifacts written by `python -m Source.Agents.scout_agent`.
 """
 import json
 import os
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+# Artifacts live at <repo>/out regardless of where Streamlit is launched.
+ROOT = Path(__file__).resolve().parents[3]
+
 st.set_page_config(page_title="Outdoor Retail Radar — Scout", layout="wide")
-st.title("🧭 Outdoor Retail Radar — Agent A (Scout)")
+st.title("🧭 Outdoor Retail Radar — Scout Agent")
 st.caption("Real-world demand signals for a Swiss / DACH outdoor retailer, in the Signal Row contract shape.")
 
-SIG = "out/signals.csv"
-TRACE = "out/trace.json"
+SIG = str(ROOT / "out" / "signals.csv")
+TRACE = str(ROOT / "out" / "trace.json")
 
 if not os.path.exists(SIG):
-    st.warning("No output yet. Run:  `python -m src.scout --market DACH`")
+    st.warning("No output yet. Run:  `python -m Source.Agents.scout_agent --market DACH`")
     st.stop()
 
 sig = pd.read_csv(SIG).fillna("")
