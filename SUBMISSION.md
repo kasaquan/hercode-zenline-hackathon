@@ -25,7 +25,7 @@ A customer describes their company in a short chat. Behind it, three agents run:
 2. **Agent 3 — Company Profiler.** A Claude extractor that reads the company website + optional
    strategy PDF + freeform notes and returns a structured profile, *inferring strategic assortment
    gaps* (what's missing to execute the stated strategy).
-3. **Agent 2 — Decision Agent (orchestrator).** Parses the customer request, fans out to Scout and
+3. **Agent 2 — Decision Agent! (orchestrator).** Parses the customer request, fans out to Scout and
    Profiler **in parallel**, then groups signals into canonical opportunities and scores each on
    **eight buyer dimensions with dynamic weights** that adapt to the query, the company profile,
    and the evidence quality. A deterministic **analytics layer** (clustering, trend velocity,
