@@ -5,8 +5,8 @@
 - Team name: HappyCats
 - Team members: Cheng, Sara, Quan
 - GitHub fork URL: https://github.com/kasaquan/hercode-zenline-hackathon
-- Demo URL, if any: _local Streamlit app (see How To Run)_
-- Video walkthrough URL, if any: _TODO_
+- Demo URL: https://lovable.dev/projects/37bda994-c86b-4157-87eb-d4929691d67b?magic_link=mc_256dd0a2-e27e-4d36-9576-9d9ea2f18525
+- Video walkthrough URL: https://drive.google.com/file/d/1PJ0QUv4CLC2_iYRUHRUSXpCCXJaHSKH3/view?usp=drive_link
 
 ## Summary
 
@@ -98,15 +98,15 @@ python -m Source.Agents.agent_3
 
 ## Ranked Opportunities
 
-> Produced by **Agent 2** and written to `out/recommendations.csv` / `recommendations.json`.
-> Run the pipeline, then paste the top rows here. Each carries an action, confidence, evidence,
-> and risks.
+> Produced by **Agent 2** and written to `out/recommendations.csv` / `out/recommendations.json`.
+> In this Ochsner Sport run, the system sourced **14 emerging signals in the CH market** and ranked them into **8 company-specific recommendations**. The table below shows the top 3 recommendations from the live app output.
 
-| Rank | Opportunity | Recommended action | Final score | Confidence | Key evidence |
-| --- | --- | --- | --- | --- | --- |
-| 1 |  |  |  |  |  |
-| 2 |  |  |  |  |  |
-| 3 |  |  |  |  |  |
+| Rank | Opportunity                                  | Recommended action             | Final score | Confidence | Key evidence                                                                                                                                                                                                                                                                                                                                                     |
+| ---: | -------------------------------------------- | ------------------------------ | ----------: | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|    1 | Trail-to-city commuter shell                 | Reposition existing assortment |      62/100 | medium     | Highest-ranked opportunity from the CH-market signal set. Agent 2 recommends acting through assortment repositioning rather than a completely new launch, making it a practical near-term buyer action. Full evidence URLs and score details are stored in `out/recommendations.csv` / `out/recommendations.json`.                                               |
+|    2 | PFAS-free lightweight rain shells            | Monitor                        |      59/100 | medium     | Sustainability and material-innovation signal around PFAS-free rain protection. Agent 2 marks it as promising but not yet strong enough for immediate launch, reflecting remaining uncertainty in evidence strength, transferability, or company fit. Full evidence URLs and score details are stored in `out/recommendations.csv` / `out/recommendations.json`. |
+|    3 | Watch or contact emerging brand/supplier: On | Monitor                        |      57/100 | medium     | Brand/supplier-led opportunity surfaced from the CH-market signals. Agent 2 flags it as worth tracking for potential future supplier contact, but keeps the action conservative until stronger evidence accumulates. Full evidence URLs and score details are stored in `out/recommendations.csv` / `out/recommendations.json`.                                  |
+
 
 ## Evidence Trail
 
