@@ -1,0 +1,141 @@
+{
+  "recommendations": [
+    {
+      "rank": 1,
+      "opportunity": "Ultralight modular backpacking systems",
+      "first_observed_market": "CH",
+      "evidence_summary": "7 signal row(s) grouped into this opportunity. source types: web, social, marketplace. markets: CH, DACH. final score: 81.5/100.",
+      "evidence_urls": [
+        "https://reddit.com/r/CampingGear/ultralight",
+        "https://kickstarter.com/projects/ultralight-pack",
+        "https://decathlon.ch/ultralight-packs"
+      ],
+      "transferability": "High. Swiss/DACH fit is 82/100.",
+      "coverage_status": "absent",
+      "recommended_action": "Test: Run a small test capsule for Ultralight modular backpacking systems",
+      "confidence": "high",
+      "risks": ["Evidence concentrated in web sources", "Supply chain: Lead times may exceed 6 months"],
+      "opportunity_type": ["feature", "product_type"],
+      "signal_markets": ["CH", "DACH"],
+      "scores": {
+        "evidence_strength": 78.2,
+        "cross_source_validation": 85.0,
+        "trend_momentum": 82.1,
+        "swiss_dach_transferability": 82.0,
+        "commercial_potential": 72.5,
+        "current_assortment_gap_fit": 75.0,
+        "strategic_gap_fit": 88.0,
+        "company_profile_fit": 79.5,
+        "final_score": 81.5
+      },
+      "source_count": 4,
+      "signal_count": 7,
+      "analytics": {
+        "trend": "accelerating",
+        "trend_velocity": 0.42,
+        "saturation": "low",
+        "saturation_score": 0.15,
+        "competitor_count": 3,
+        "diversity": 0.78,
+        "diversity_detail": {"unique_keywords": 12, "unique_brands": 3},
+        "source_quality": 0.82,
+        "anomalies": 0,
+        "anomaly_list": [],
+        "geography": "ch_focused",
+        "clustering": {"clusters": 2}
+      }
+    },
+    {
+      "rank": 2,
+      "opportunity": "PFAS-free lightweight rain shells",
+      "first_observed_market": "DACH",
+      "evidence_summary": "5 signal row(s) grouped into this opportunity. source types: web, competitor. markets: CH, DE, DACH. final score: 72.3/100.",
+      "evidence_urls": ["https://patagonia.com/pfas-free-shells", "https://decathlon.ch/rain-shells"],
+      "transferability": "High. Swiss/DACH fit is 78/100.",
+      "coverage_status": "partially_covered",
+      "recommended_action": "Test: Run a small test capsule for PFAS-free lightweight rain shells",
+      "confidence": "medium-high",
+      "risks": ["Material claims require verification", "Potential cannibalization"],
+      "opportunity_type": ["material", "product_type"],
+      "signal_markets": ["CH", "DE", "DACH"],
+      "scores": {
+        "evidence_strength": 71.5,
+        "cross_source_validation": 75.0,
+        "trend_momentum": 68.2,
+        "swiss_dach_transferability": 78.0,
+        "commercial_potential": 68.0,
+        "current_assortment_gap_fit": 65.0,
+        "strategic_gap_fit": 72.0,
+        "company_profile_fit": 72.5,
+        "final_score": 72.3
+      },
+      "source_count": 2,
+      "signal_count": 5,
+      "analytics": {
+        "trend": "stable",
+        "trend_velocity": 0.08,
+        "saturation": "medium",
+        "saturation_score": 0.35,
+        "competitor_count": 6,
+        "diversity": 0.65,
+        "diversity_detail": {"unique_keywords": 8, "unique_brands": 6},
+        "source_quality": 0.78,
+        "anomalies": 0,
+        "anomaly_list": [],
+        "geography": "dach_focused",
+        "clustering": {"clusters": 1}
+      }
+    },
+    {
+      "rank": 3,
+      "opportunity": "UV-protective hiking shirts and sun hoodies",
+      "first_observed_market": "CH",
+      "evidence_summary": "4 signal row(s) grouped into this opportunity. source types: web, social. markets: CH, DACH. final score: 62.8/100.",
+      "evidence_urls": ["https://reddit.com/r/hiking/sun-protection", "https://example.com/uv-shirts"],
+      "transferability": "Medium. Swiss/DACH fit is 68/100.",
+      "coverage_status": "partially_covered",
+      "recommended_action": "Monitor: Collect additional Swiss/DACH evidence before launching",
+      "confidence": "medium",
+      "risks": ["Evidence concentrated in social sources", "Commercial potential uncertain"],
+      "opportunity_type": ["feature", "product_type"],
+      "signal_markets": ["CH", "DACH"],
+      "scores": {
+        "evidence_strength": 58.5,
+        "cross_source_validation": 62.0,
+        "trend_momentum": 55.2,
+        "swiss_dach_transferability": 68.0,
+        "commercial_potential": 52.0,
+        "current_assortment_gap_fit": 58.0,
+        "strategic_gap_fit": 68.0,
+        "company_profile_fit": 65.5,
+        "final_score": 62.8
+      },
+      "source_count": 2,
+      "signal_count": 4,
+      "analytics": {
+        "trend": "decelerating",
+        "trend_velocity": -0.15,
+        "saturation": "high",
+        "saturation_score": 0.62,
+        "competitor_count": 9,
+        "diversity": 0.42,
+        "diversity_detail": {"unique_keywords": 5, "unique_brands": 4},
+        "source_quality": 0.65,
+        "anomalies": 1,
+        "anomaly_list": [{"signal_name": "Unusual UV shirt price", "anomaly_type": "unusual_price", "reason": "Price 450 CHF is unusual (z-score 2.8)", "severity": "low"}],
+        "geography": "ch_focused",
+        "clustering": {"clusters": 1}
+      }
+    }
+  ],
+  "input_summary": {
+    "customer_query": "Decathlon CH needs decision support on ultralight backpacking",
+    "market": "CH",
+    "category": "outdoor retail",
+    "product_focus": "ultralight backpacking",
+    "number_of_input_signals": 16,
+    "number_of_recommendations": 3,
+    "company_profile_used": true,
+    "company_name": "Decathlon CH"
+  }
+}
