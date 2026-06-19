@@ -5,7 +5,9 @@
 - Team name: HappyCats
 - Team members: Cheng, Sara, Quan
 - GitHub fork URL: https://github.com/kasaquan/hercode-zenline-hackathon
-- Demo URL: https://lovable.dev/projects/37bda994-c86b-4157-87eb-d4929691d67b?magic_link=mc_256dd0a2-e27e-4d36-9576-9d9ea2f18525
+- Demo URL:
+Presentation: https://happycats-showcase.lovable.app
+Analytics & Recommendations Dashboard: https://happycats.lovable.app
 - Video walkthrough URL: https://drive.google.com/file/d/1PJ0QUv4CLC2_iYRUHRUSXpCCXJaHSKH3/view?usp=drive_link
 
 ## Summary
