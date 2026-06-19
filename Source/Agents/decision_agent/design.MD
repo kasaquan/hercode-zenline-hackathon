@@ -88,7 +88,6 @@ Key fields consumed:
   "current_assortment_gaps": "string",
   "target_gross_margin": "low (15-25%) | medium (25-40%) | high (40%+)",
   "innovation_appetite": "low | medium | high",
-  "supply_chain_constraints": "string",
   "strategic_expansion_focus": "string",
   "strategic_assortment_gaps": "string",
   "confidence_by_field": { "field_name": "high | medium | low" }

@@ -42,7 +42,6 @@ DEFAULT_PROFILE = {
     "distribution_model": "hybrid",
     "target_gross_margin": "medium (25-40%)",
     "innovation_appetite": "medium",
-    "supply_chain_constraints": "unknown",
     "strategic_expansion_focus": "",
     "strategic_timeline": "",
     "strategic_rationale": "",
@@ -432,7 +431,6 @@ def company_profile_fit_score(opportunity: str, rows: List[Dict[str, Any]], prof
     customer_segments = _profile_text(profile, "customer_segments")
     innovation = _norm(profile.get("innovation_appetite", "medium"))
     margin = _norm(profile.get("target_gross_margin", "medium"))
-    constraints = _norm(profile.get("supply_chain_constraints", ""))
 
     score = 55.0
     reasons = []
@@ -475,10 +473,6 @@ def company_profile_fit_score(opportunity: str, rows: List[Dict[str, Any]], prof
         else:
             score -= 4
             reasons.append("margin differentiation is not obvious")
-
-    if constraints and constraints not in ["none", "unknown", "n/a"]:
-        score -= 5
-        reasons.append("supply chain constraints may limit actionability")
 
     score = max(0.0, min(100.0, score))
     if not reasons:
@@ -613,7 +607,6 @@ def choose_action(opportunity: str, scores: Dict[str, Any], rows: List[Dict[str,
     strategic_fit = scores["strategic_gap_fit"]
 
     innovation = _norm(profile.get("innovation_appetite", "medium"))
-    supply_constraints = _norm(profile.get("supply_chain_constraints", ""))
 
     if evidence < 45 or cross < 35:
         return "Monitor"
@@ -621,11 +614,7 @@ def choose_action(opportunity: str, scores: Dict[str, Any], rows: List[Dict[str,
     if company_fit < 45:
         return "Monitor"
 
-    has_constraints = supply_constraints and supply_constraints not in ["none", "unknown", "n/a"]
-
     if strategic_fit >= 75 and final >= 65:
-        if has_constraints:
-            return "Contact supplier/brand"
         if innovation == "high":
             return "Test"
         return "Monitor"
@@ -717,10 +706,6 @@ def risks_and_missing(opportunity: str, scores: Dict[str, Any], rows: List[Dict[
     if any(k in text for k in ["jacket", "shell", "commuter", "trail-to-city", "winter"]):
         risks.append("Potential cannibalization with existing jacket or shell assortment.")
         missing.append("Internal assortment snapshot and SKU overlap check.")
-
-    constraints = profile.get("supply_chain_constraints")
-    if constraints and _norm(constraints) not in ["none", "unknown", "n/a"]:
-        risks.append(f"Supply chain constraint from Agent 3 profile: {constraints}")
 
     confidence_map = profile.get("confidence_by_field", {}) or {}
     if confidence_map.get("strategic_expansion_focus") == "low":
@@ -816,7 +801,6 @@ def build_recommendations(signals: List[Dict[str, Any]], profile: Dict[str, Any]
                     "current_assortment_gaps",
                     "target_gross_margin",
                     "innovation_appetite",
-                    "supply_chain_constraints",
                     "strategic_expansion_focus",
                     "strategic_assortment_gaps",
                     "confidence_by_field",

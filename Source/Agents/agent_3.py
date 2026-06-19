@@ -31,7 +31,6 @@ COMPANY_PROFILE_SCHEMA = {
     "distribution_model": "direct | retail | hybrid",
     "target_gross_margin": "low (15-25%) | medium (25-40%) | high (40%+)",
     "innovation_appetite": "low | medium | high",
-    #"supply_chain_constraints": "string",
     "strategic_expansion_focus": "string - what exec strategy says they're moving into",
     "strategic_timeline": "string - when (e.g., Q3 2026, 2027)",
     "strategic_rationale": "string - why are they expanding?",
