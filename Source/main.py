@@ -1,6 +1,6 @@
 """
-Entry point for Outdoor Retail Recommender System
-Runs Streamlit dashboard with correct working directory
+Entry point for Zenline Outdoor Retail Recommender System
+Runs customer chat interface with correct working directory
 """
 
 import subprocess
@@ -12,11 +12,13 @@ def main():
     source_dir = Path(__file__).parent
     
     # Run streamlit from Source directory
-    print(f"🚀 Starting Outdoor Retail Recommender Dashboard...")
+    print(f"🚀 Starting Zenline Outdoor Retail Recommender...")
     print(f"📁 Working directory: {source_dir}")
+    print(f"🌐 Opening browser at http://localhost:8501")
     
     subprocess.run(
-        [sys.executable, "-m", "streamlit", "run", "App/dashboard.py"],
+        [sys.executable, "-m", "streamlit", "run", "App/customer_chat.py"],
+        #[sys.executable, "-m", "streamlit", "run", "App/dashboard.py"],
         cwd=source_dir
     )
 
