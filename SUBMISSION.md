@@ -527,11 +527,6 @@ FINAL RANKING:
 
 ## Why This Is NOT "Just Calling an LLM"
 
-### ❌ What We DON'T Do
-1. "Claude, find some product ideas" (magic)
-2. "Claude, score these on vibes" (not rigorous)
-3. "Claude, rank them based on what seems good" (opinion)
-
 ### ✅ What We DO Do
 1. **Tool-calling loop** that sources from real APIs
 2. **Deterministic clustering** (Jaccard similarity, 0.4 threshold)
