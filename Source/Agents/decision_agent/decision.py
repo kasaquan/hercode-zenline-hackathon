@@ -179,9 +179,31 @@ def load_profile(path: str | None) -> Dict[str, Any]:
 
 
 def expand_seed_keywords(product_focus: str) -> List[str]:
-    t = _norm(product_focus)
-    seeds = [product_focus]
+    # Generic-first: the seed set is driven by the customer's product_focus itself,
+    # so the agent works for ANY category (winter jackets, cookware, e-bikes, …),
+    # not just the hard-coded outdoor verticals. Category-specific seeds below are
+    # optional enrichment layered on top of these generic, always-present seeds.
+    focus = (product_focus or "").strip() or "outdoor products"
+    t = _norm(focus)
 
+    seeds = [
+        focus,
+        f"emerging {focus}",
+        f"{focus} trends",
+        f"{focus} new materials",
+        f"{focus} rising brands",
+        f"{focus} competitor assortment",
+        f"{focus} marketplace bestsellers",
+        f"{focus} Switzerland DACH",
+        f"sustainable {focus}",
+        f"premium {focus}",
+        f"lightweight {focus}",
+        f"repairable {focus}",
+    ]
+
+    # Optional category-specific additions (only when the focus clearly matches a
+    # known outdoor vertical). These supplement — they never replace — the generic
+    # seeds above.
     if any(k in t for k in ["winter jacket", "winter jackets", "insulated jacket", "ski jacket"]):
         seeds += [
             "winter jackets",
@@ -222,14 +244,6 @@ def expand_seed_keywords(product_focus: str) -> List[str]:
             "climbing chalk bag",
             "approach shoes",
             "climbing gym apparel",
-        ]
-    else:
-        seeds += [
-            "PFAS-free outdoor apparel",
-            "UV protective hiking shirt",
-            "trail-to-city jacket",
-            "repairable outdoor gear",
-            "ultralight hydration vest",
         ]
 
     seen = set()
@@ -287,12 +301,16 @@ def write_request_file(request: Dict[str, Any], path: str) -> None:
         json.dump(request, f, indent=2, ensure_ascii=False)
 
 
-def canonical_opportunity(row: Dict[str, Any], request: Dict[str, Any]) -> Tuple[str, List[str]]:
-    # Classify each signal by its OWN content. The customer's product_focus is
-    # deliberately NOT mixed in here: doing so makes the query keyword dominate
-    # grouping (e.g. a "winter jackets" query would relabel every unrelated signal
-    # as a winter-jacket opportunity). product_focus steers Scout's seeds upstream,
-    # not how Decision groups whatever signals actually came back.
+_GENERIC_BRAND_NAMES = {"", "global", "none", "nan", "unknown", "n/a", "various"}
+
+
+def infer_opportunity_types(row: Dict[str, Any]) -> List[str]:
+    """Infer the buyer-relevant facets a signal touches, from the row's OWN content.
+
+    Generic across categories — returns any of: product_type, material, feature,
+    brand, supplier, price_band_gap, usage_occasion, merchandising_idea,
+    service_model. Always returns at least ["product_type"].
+    """
     text = _norm(
         " ".join(
             [
@@ -300,44 +318,121 @@ def canonical_opportunity(row: Dict[str, Any], request: Dict[str, Any]) -> Tuple
                 row.get("keyword", ""),
                 row.get("product_name", ""),
                 row.get("brand", ""),
+                row.get("signal_type", ""),
                 row.get("notes", ""),
             ]
         )
     )
 
-    if any(k in text for k in ["winter jacket", "insulated", "down alternative", "ski jacket", "winter shell"]):
+    types: List[str] = []
+
+    def add(t: str) -> None:
+        if t not in types:
+            types.append(t)
+
+    if (row.get("product_name") or "").strip() or any(
+        k in text for k in ["jacket", "shoe", "boot", "pack", "vest", "tent", "shirt", "apparel", "gear", "product", "kit", "bag"]
+    ):
+        add("product_type")
+    if any(k in text for k in ["material", "fabric", "insulation", "down", "merino", "recycled", "pfas", "pfc", "fluorocarbon", "membrane", "gore", "nylon", "polyester"]):
+        add("material")
+    if any(k in text for k in ["waterproof", "breathable", "lightweight", "ultralight", "uv", "upf", "durable", "repairable", "insulated", "windproof", "feature"]):
+        add("feature")
+
+    brand = _norm(row.get("brand"))
+    if brand and brand not in _GENERIC_BRAND_NAMES:
+        add("brand")
+    if any(k in text for k in ["supplier", "manufacturer", "oem", "wholesale", "distributor", "vendor"]):
+        add("supplier")
+    if any(k in text for k in ["price", "margin", "premium", "budget", "entry-level", "mid-range", "price band", "price-band", "under ", "gap"]):
+        add("price_band_gap")
+    if any(k in text for k in ["commuter", "trail-to-city", "urban", "occasion", "gym", "touring", "hiking", "running", "season", "winter", "summer", "everyday"]):
+        add("usage_occasion")
+    if any(k in text for k in ["bestseller", "assortment", "merchandis", "bundle", "display", "collection", "capsule", "trend", "rank"]):
+        add("merchandising_idea")
+    if any(k in text for k in ["repair", "rental", "resale", "warranty", "subscription", "service", "take-back", "secondhand", "circular"]):
+        add("service_model")
+
+    signal_type = _norm(row.get("signal_type"))
+    if "competitor" in signal_type or "marketplace" in signal_type:
+        add("merchandising_idea")
+    if "brand" in signal_type:
+        add("brand")
+
+    if not types:
+        types = ["product_type"]
+    return types
+
+
+def _normalize_outdoor_label(text: str) -> Tuple[str, List[str]] | None:
+    """Optional normalization: collapse near-duplicate labels into a shared
+    canonical outdoor bucket. Returns None when no known pattern matches, so it
+    only ever *refines* the generic grouping below — it is not the main logic."""
+    t = _norm(text)
+
+    if any(k in t for k in ["winter jacket", "insulated", "down alternative", "ski jacket", "winter shell"]):
         return "Winter jacket and insulation opportunity", ["product_type", "material", "feature"]
-
-    if any(k in text for k in ["pfas", "pfc", "fluorocarbon"]) and any(k in text for k in ["rain", "shell", "waterproof", "jacket"]):
+    if any(k in t for k in ["pfas", "pfc", "fluorocarbon"]) and any(k in t for k in ["rain", "shell", "waterproof", "jacket"]):
         return "PFAS-free lightweight rain shells", ["material", "feature", "product_type"]
-
-    if any(k in text for k in ["uv", "upf", "sun hoodie", "sun shirt", "sun-protective", "sun protective"]):
+    if any(k in t for k in ["uv", "upf", "sun hoodie", "sun shirt", "sun-protective", "sun protective"]):
         return "UV-protective hiking shirts and sun hoodies", ["product_type", "feature", "usage_occasion"]
-
-    if any(k in text for k in ["ultralight", "backpacking", "lightweight tent", "modular kit"]):
+    if any(k in t for k in ["ultralight", "backpacking", "lightweight tent", "modular kit"]):
         return "Ultralight backpacking and modular kit systems", ["product_type", "feature", "usage_occasion"]
-
-    if any(k in text for k in ["commuter", "trail-to-city", "city", "urban outdoor", "gorpcore"]):
+    if any(k in t for k in ["commuter", "trail-to-city", "city", "urban outdoor", "gorpcore"]):
         return "Trail-to-city commuter shell", ["usage_occasion", "product_type", "merchandising_idea"]
-
-    if any(k in text for k in ["climbing", "bouldering", "chalk", "climbing gym"]):
+    if any(k in t for k in ["climbing", "bouldering", "chalk", "climbing gym"]):
         return "Climbing gym-driven bouldering accessories", ["usage_occasion", "product_type"]
-
-    if any(k in text for k in ["hydration vest", "running vest", "trail vest"]):
+    if any(k in t for k in ["hydration vest", "running vest", "trail vest"]):
         return "Ultralight hydration and trail running vests", ["product_type", "feature"]
-
-    if any(k in text for k in ["repair", "repairable", "durability", "durable"]):
+    if any(k in t for k in ["repair", "repairable", "durability", "durable"]):
         return "Repairable durable outdoor gear", ["feature", "service_model", "merchandising_idea"]
-
-    if any(k in text for k in ["merino", "base layer", "baselayer"]):
+    if any(k in t for k in ["merino", "base layer", "baselayer"]):
         return "Merino and technical base layers", ["material", "product_type"]
+    return None
 
+
+def canonical_opportunity(row: Dict[str, Any], request: Dict[str, Any]) -> Tuple[str, List[str]]:
+    # Generic-first grouping. The canonical key is taken from the signal's OWN
+    # content in priority order — Agent 1 signal_name, then product_name, then a
+    # brand/supplier label when the signal is brand-led, then keyword — so the
+    # agent groups ANY category, not just hard-coded outdoor verticals. The
+    # customer's product_focus is deliberately NOT mixed in here (that would make
+    # the query keyword dominate and relabel unrelated signals); it steers Scout's
+    # seeds upstream instead.
+    types = infer_opportunity_types(row)
+
+    signal_name = (row.get("signal_name") or "").strip()
+    product_name = (row.get("product_name") or "").strip()
     brand = (row.get("brand") or "").strip()
-    if brand and brand.lower() not in ["global", "none", "nan", "unknown"]:
-        return f"Watch or contact emerging brand/supplier: {brand}", ["brand", "supplier"]
+    keyword = (row.get("keyword") or "").strip()
+    brand_led = bool(brand) and _norm(brand) not in _GENERIC_BRAND_NAMES and not signal_name and not product_name
 
-    name = row.get("signal_name") or row.get("keyword") or "Unspecified opportunity"
-    return name.strip()[:120], ["product_type"]
+    if signal_name:
+        label = signal_name
+    elif product_name:
+        label = product_name
+    elif brand_led:
+        label = f"Watch or contact emerging brand/supplier: {brand}"
+        for t in ("brand", "supplier"):
+            if t not in types:
+                types.append(t)
+    elif keyword:
+        label = keyword
+    else:
+        label = "Unspecified opportunity"
+
+    # Optional outdoor normalization, applied over the row's own text. When a known
+    # vertical matches, collapse to its canonical bucket and merge in its facets;
+    # otherwise keep the generic label above.
+    row_text = " ".join([signal_name, keyword, product_name, brand, row.get("notes", "")])
+    normalized = _normalize_outdoor_label(row_text)
+    if normalized:
+        label, extra_types = normalized
+        for t in extra_types:
+            if t not in types:
+                types.append(t)
+
+    return label.strip()[:120], types
 
 
 def group_signals(signals: List[Dict[str, Any]], request: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -482,7 +577,102 @@ def company_profile_fit_score(opportunity: str, rows: List[Dict[str, Any]], prof
     return score, "; ".join(reasons)
 
 
-def score_group(group: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any]:
+# Baseline contribution of each buyer dimension to final_score. These are the
+# original fixed coefficients; get_dynamic_weights() nudges them per request and
+# re-normalizes, so the score adapts to query intent, the Agent 3 profile, and the
+# quality of the Agent 1 evidence instead of being one-size-fits-all.
+BASE_WEIGHTS: Dict[str, float] = {
+    "evidence_strength": 0.18,
+    "cross_source_validation": 0.12,
+    "trend_momentum": 0.12,
+    "swiss_dach_transferability": 0.16,
+    "commercial_potential": 0.10,
+    "current_assortment_gap_fit": 0.10,
+    "strategic_gap_fit": 0.12,
+    "company_profile_fit": 0.10,
+}
+
+WEIGHT_BUMP = 0.04
+
+
+def normalize_weights(weights: Dict[str, float]) -> Dict[str, float]:
+    """Clamp negatives and rescale so the weights sum to 1.0."""
+    clamped = {k: max(0.0, v) for k, v in weights.items()}
+    total = sum(clamped.values())
+    if total <= 0:
+        n = len(clamped) or 1
+        return {k: 1.0 / n for k in clamped}
+    return {k: v / total for k, v in clamped.items()}
+
+
+def get_dynamic_weights(
+    profile: Dict[str, Any],
+    request: Dict[str, Any],
+    rows: List[Dict[str, Any]],
+) -> Tuple[Dict[str, float], List[str]]:
+    """Adapt BASE_WEIGHTS to the customer query intent, the Agent 3 profile, and the
+    Agent 1 evidence quality. Returns (normalized_weights, adjustment_reasons)."""
+    profile = profile or {}
+    request = request or {}
+    weights = dict(BASE_WEIGHTS)
+    reasons: List[str] = []
+
+    def bump(key: str, amount: float, reason: str) -> None:
+        weights[key] = weights.get(key, 0.0) + amount
+        reasons.append(reason)
+
+    # --- Agent 3 profile intent ---
+    innovation = _norm(profile.get("innovation_appetite", "medium"))
+    if "high" in innovation:
+        bump("trend_momentum", WEIGHT_BUMP, "High innovation appetite: weighting trend_momentum up.")
+        bump("strategic_gap_fit", WEIGHT_BUMP, "High innovation appetite: weighting strategic_gap_fit up.")
+    elif "low" in innovation:
+        bump("evidence_strength", WEIGHT_BUMP, "Low innovation appetite: weighting evidence_strength up.")
+        bump("cross_source_validation", WEIGHT_BUMP, "Low innovation appetite: weighting cross_source_validation up.")
+
+    margin = _norm(profile.get("target_gross_margin", ""))
+    if "high" in margin:
+        bump("commercial_potential", WEIGHT_BUMP, "High target gross margin: weighting commercial_potential up.")
+
+    strategic_focus = profile.get("strategic_expansion_focus")
+    strategic_gaps = profile.get("strategic_assortment_gaps")
+    if (strategic_focus and not _is_placeholder(strategic_focus)) or (
+        strategic_gaps and not _is_placeholder(strategic_gaps)
+    ):
+        bump("strategic_gap_fit", WEIGHT_BUMP, "Strategic expansion focus / assortment gaps present: weighting strategic_gap_fit up.")
+
+    # --- Agent 1 evidence quality ---
+    sources = set((r.get("source") or "").strip().lower() for r in rows if r.get("source"))
+    signal_types = set((r.get("signal_type") or "").strip().lower() for r in rows if r.get("signal_type"))
+    if len(sources) <= 1 or len(signal_types) <= 1:
+        bump("evidence_strength", WEIGHT_BUMP, "Single-source evidence: weighting evidence_strength up.")
+        bump("cross_source_validation", WEIGHT_BUMP, "Single-source evidence: weighting cross_source_validation up.")
+        bump("trend_momentum", -WEIGHT_BUMP, "Single-source evidence: discounting trend_momentum.")
+
+    markets = set((r.get("market") or "").strip().upper() for r in rows if r.get("market"))
+    if not any(m in {"CH", "DACH", "DE", "AT", "SWITZERLAND", "GERMANY", "AUSTRIA"} for m in markets):
+        bump("swiss_dach_transferability", WEIGHT_BUMP, "No CH/DACH evidence: weighting swiss_dach_transferability up.")
+
+    if not any((r.get("url") or "").strip() for r in rows):
+        bump("evidence_strength", WEIGHT_BUMP, "No evidence URLs: weighting evidence_strength up.")
+        bump("trend_momentum", -WEIGHT_BUMP, "No evidence URLs: discounting trend_momentum.")
+
+    # --- Customer query intent ---
+    intent_text = _norm(str(request.get("product_focus", "")) + " " + str(request.get("original_query", "")))
+    if any(k in intent_text for k in ["trend", "emerging", "rising", "innovative", "new"]):
+        bump("trend_momentum", WEIGHT_BUMP, "Query signals trend/innovation intent: weighting trend_momentum up.")
+    if any(k in intent_text for k in ["premium", "margin", "profit", "high-margin"]):
+        bump("commercial_potential", WEIGHT_BUMP, "Query signals commercial/margin intent: weighting commercial_potential up.")
+
+    return normalize_weights(weights), reasons
+
+
+def compute_final_score(scores: Dict[str, float], weights: Dict[str, float]) -> float:
+    """Weighted sum of the buyer dimensions named in weights."""
+    return sum(weights.get(k, 0.0) * scores.get(k, 0.0) for k in weights)
+
+
+def score_group(group: Dict[str, Any], profile: Dict[str, Any], request: Dict[str, Any]) -> Dict[str, Any]:
     rows = group["signals"]
 
     signal_scores = [max(0.0, min(1.0, _safe_float(r.get("signal_score"), 0.0))) for r in rows]
@@ -544,16 +734,18 @@ def score_group(group: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any
     strategic_score, strategic_reason = strategic_gap_fit(group["opportunity"], rows, profile)
     company_score, company_reason = company_profile_fit_score(group["opportunity"], rows, profile)
 
-    final_score = (
-        0.18 * evidence_strength
-        + 0.12 * cross_source_validation
-        + 0.12 * trend_momentum
-        + 0.16 * swiss_dach_transferability
-        + 0.10 * commercial_potential
-        + 0.10 * current_gap_score
-        + 0.12 * strategic_score
-        + 0.10 * company_score
-    )
+    dimension_scores = {
+        "evidence_strength": evidence_strength,
+        "cross_source_validation": cross_source_validation,
+        "trend_momentum": trend_momentum,
+        "swiss_dach_transferability": swiss_dach_transferability,
+        "commercial_potential": commercial_potential,
+        "current_assortment_gap_fit": current_gap_score,
+        "strategic_gap_fit": strategic_score,
+        "company_profile_fit": company_score,
+    }
+    weights, weight_reasons = get_dynamic_weights(profile, request, rows)
+    final_score = compute_final_score(dimension_scores, weights)
 
     return {
         "evidence_strength": round(evidence_strength, 1),
@@ -569,6 +761,8 @@ def score_group(group: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any
         "current_gap_reason": current_gap_reason,
         "strategic_fit_reason": strategic_reason,
         "company_fit_reason": company_reason,
+        "weights_used": {k: round(v, 4) for k, v in weights.items()},
+        "weight_adjustment_reasons": weight_reasons,
     }
 
 
@@ -768,7 +962,7 @@ def build_recommendations(signals: List[Dict[str, Any]], profile: Dict[str, Any]
 
     for opportunity, group in groups.items():
         rows = group["signals"]
-        scores = score_group(group, profile)
+        scores = score_group(group, profile, request)
         base_score = scores["final_score"]
 
         adjusted_score, adjustment_notes = analytics.adjust_final_score(
@@ -779,7 +973,7 @@ def build_recommendations(signals: List[Dict[str, Any]], profile: Dict[str, Any]
 
         scores["final_score"] = adjusted_score  # ← overwrites with adjusted score
         scores["analytics_adjustment"] = adjustment_notes
-        
+
         action = choose_action(opportunity, scores, rows, profile)
         confidence = confidence_label(scores)
         risks, missing = risks_and_missing(opportunity, scores, rows, profile, action)

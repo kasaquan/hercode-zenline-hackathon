@@ -321,7 +321,11 @@ def detect_anomalies(signals: List[Dict]) -> Dict[str, Any]:
                 })
     
     # 2. Unusual price points
-    prices = [float(p) for s in signals if (p := s.get("price")) and isinstance(p, (int, float))]
+    prices = [
+        float(s.get("price"))
+        for s in signals
+        if s.get("price") and isinstance(s.get("price"), (int, float))
+    ]
     if prices:
         prices_arr = np.array(prices)
         mean_price = np.mean(prices_arr)
