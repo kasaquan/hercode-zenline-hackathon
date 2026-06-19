@@ -1,147 +1,128 @@
-# HerCode Zenline Hackathon
+# Zenline Outdoor Retail Recommender
 
-Build the retail radar that spots the next outdoor opportunity before it becomes obvious.
+> A three-agent decision system that turns noisy market signals into one clear answer:
+> **what should this retailer test, buy, launch, or monitor next?**
 
-## Challenge
+![Outdoor opportunity radar](assets/alpine-opportunity-hero.png)
 
-Retail teams are flooded with weak signals: TikTok clips, search spikes, niche communities, new materials, marketplace bestsellers, competitor drops, weather shifts, and regional lifestyle changes. The hard part is not finding more data. It is turning noisy signals into one clear answer: what should a retailer do next?
+Retail buying teams are flooded with weak signals — search spikes, niche communities, new
+materials, marketplace bestsellers, competitor drops. The hard part isn't finding more data; it's
+turning it into a defensible decision. Zenline does that with three cooperating Claude agents and a
+deterministic scoring core, then explains every recommendation with real evidence and an auditable
+score.
 
-Your mission is to build a reusable system that detects emerging product, material, and brand opportunities from global and local market signals.
+Built for the [HerCode × Zenline hackathon](docs/challenge.md) (Swiss / DACH outdoor retail), but
+**generic-first by design** — point it at any category or market by changing inputs, not code.
 
-Use the shared scenario of a Swiss outdoor retailer to prove that the system works, but design it so the same method could be reused for another industry, market, product category, retailer, or brand.
+---
 
-The best submissions are not one-off research reports. They show a repeatable flow where inputs can change and the method still works.
+## How it works
 
-This is the **B2B challenge**: help the retailer decide what emerging products, materials, brands, or product features are worth stocking, testing, or monitoring. There is also a companion **B2C challenge** by Scandit, focused on the in-store shopper experience: [`raffaelefarinaro/hercode-scandit-challenge`](https://github.com/raffaelefarinaro/hercode-scandit-challenge).
+```
+Customer query (chat or CLI)
+        │
+        ▼
+  Agent 2 — Decision (orchestrator)
+        │  parses request → generic seed keywords
+        ├──────────────► Agent 1 — Scout        ┐  run in parallel
+        │                 web_search · Trends ·  │
+        │                 Reddit · GDELT         │
+        │                 → signals.csv          │
+        └──────────────► Agent 3 — Profiler     ┘
+                          website · PDF · notes
+                          → company_profile.json
+        │  join
+        ▼
+  group → score (8 dimensions, dynamic weights) → analytics multiplier → rank
+        │
+        ▼
+  recommendations.csv  +  recommendations.json  →  Streamlit app
+```
 
-## Challenge Scenario
+| Agent | Role | What it produces |
+| --- | --- | --- |
+| **Agent 1 — Scout** | Agentic sourcing loop (`claude-opus-4-8`). Gathers real, cited evidence from `web_search`, Google Trends, Reddit, and GDELT. | `out/signals.csv` — Signal Rows, each backed by a real URL and tagged with the market it appears in |
+| **Agent 3 — Profiler** | Reads the company website + strategy PDF + notes; infers strategic assortment gaps. | `out/company_profile.json` |
+| **Agent 2 — Decision** | Parses the request, fans out to Scout + Profiler **in parallel**, groups signals into opportunities, and scores each on 8 buyer dimensions with **dynamic, auditable weights** plus a statistical analytics layer. | `out/recommendations.csv` (Zenline contract) + `out/recommendations.json` |
 
-Detect promising emerging outdoor product, material, and brand opportunities for Switzerland or DACH. Think beyond "new product list": your system could uncover a rising product format, material, technology, feature, brand, supplier, or product gap.
+## Quick start
 
-Your system should answer:
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env            # add your ANTHROPIC_API_KEY (never commit it)
 
-- What are the emerging product, material, or brand opportunities?
-- Where is the trend appearing first: US, Japan, Korea, Nordics, UK, DACH, Switzerland, or another market?
-- What evidence supports the opportunity?
-- Could the trend transfer into Switzerland or DACH?
-- What should the retailer test, buy, launch, or monitor next?
-- How reusable is the system beyond outdoor retail?
+python Source/main.py           # launches the chat app at http://localhost:8501
+```
 
-Start by asking what a Swiss outdoor retailer would actually want to know. For example:
+Prefer the command line? Run the full pipeline headless:
 
-- Which rising brands should the buying team watch, contact, or onboard?
-- Which product types are growing in other markets before they become obvious in Switzerland?
-- Which materials, technologies, or product features are becoming commercially meaningful?
-- Which price bands, formats, sizes, or use cases are undercovered by local retailers?
-- Which product, material, or brand gaps could create differentiation, margin, or customer loyalty?
-- Which trends are just noise, and which deserve a test, supplier conversation, or deeper analysis?
+```bash
+python -m Source.Agents.decision_agent.pipeline \
+  --query "Decathlon CH is looking for decision support on winter jackets" \
+  --market DACH --company https://www.decathlon.ch --notes "Premium, 12 CH stores"
+```
 
-Based on those questions, define your own methodology: choose sources, collect evidence, score signals, assess Swiss/DACH transferability, and turn the best findings into clear retail actions.
+Each agent also runs standalone — see [`SUBMISSION.md`](SUBMISSION.md#how-to-run).
 
-## Event Timeline
+## What makes it more than a research report
 
-- Event date: June 19, 2026
-- Meeting point: Zenline AI Office
-- 10:00 CEST: Yoga session at the lake
-- 10:45 CEST: Challenge reveal, Q&A, and kick-off
-- 11:15-16:30 CEST: Build session
-- 15:00 CEST: Pre-submission deadline
-- 16:30 CEST: Final submission deadline
-- 16:30 CEST: Miss Liquid Bar at the lake while the jury evaluates results
-- 17:45 CEST: Back in the office for finalist presentations and awards
+- **Evidence-first.** Every recommendation traces back to real source URLs; the agent never invents
+  citations. Intermediate findings are logged as Signal Rows with their own provenance.
+- **Auditable scoring.** `final_score` (0–100) is a weighted blend of eight dimensions. The weights
+  are **dynamic** — they shift with query intent, the company profile, and evidence quality — and
+  every adjustment is recorded in `weights_used` / `weight_adjustment_reasons`.
+- **Statistical rigor.** A deterministic analytics layer (clustering, trend velocity, market
+  saturation, anomaly detection, geographic concentration, source quality, diversity) applies a
+  transparent multiplier on top of the base score.
+- **Transferability is explicit.** Swiss/DACH fit is a scored dimension, not an afterthought —
+  flagged as inferred when local evidence is missing.
+- **Reusable.** Swap the product focus, market, or community sources and the same flow works for a
+  different vertical. Outdoor-specific rules exist only as optional normalization.
 
-Teams should have 2-4 people. Discord is the main communication channel before and during the hackathon.
+## Repository layout
 
-Intro session deck: [`slides/hercode-zenline-hackathon-intro.pptx`](slides/hercode-zenline-hackathon-intro.pptx).
+```
+Source/
+  main.py                       # entry point — launches the Streamlit app
+  App/customer_chat.py          # conversational intake + results (Profile · Signals · Recommendations)
+  Agents/
+    scout_agent/                # Agent 1 — sourcing loop, tools, scoring, schema
+    agent_3.py                  # Agent 3 — company profile extractor
+    decision_agent/
+      decision.py               # Agent 2 — grouping + 8-dimension dynamic scoring
+      analytics.py              # statistical signal analysis layer
+      pipeline.py               # parallel orchestrator (Scout + Profiler → Decision)
+docs/                           # challenge brief, data contract, evaluation rubric
+examples/                       # sample signals.csv + company_profile.json
+out/                            # generated artifacts (recommendations, signals, traces)
+SUBMISSION.md                   # full hackathon writeup, run modes, ranked results
+```
 
-## What's In This Repo
+## Outputs
 
-- [`SUBMISSION.md`](SUBMISSION.md): fill this in before submitting your fork.
-- [`docs/challenge.md`](docs/challenge.md): deeper challenge brief and quality bar.
-- [`docs/data-contract.md`](docs/data-contract.md): suggested structured fields for signals and recommendations.
-- [`docs/evaluation.md`](docs/evaluation.md): judging rubric.
-- [`examples/signals.csv`](examples/signals.csv): minimal example signal-row shape.
-- [`slides/hercode-zenline-hackathon-intro.pptx`](slides/hercode-zenline-hackathon-intro.pptx): intro-session slide deck.
+Running the pipeline writes everything to `out/`:
 
-## Required Deliverables
+- **`recommendations.csv`** — the deliverable, in the [Zenline Recommendation Row](docs/data-contract.md#recommendation-row) contract
+- **`recommendations.json`** — full scoring detail: per-dimension scores, dynamic weights, analytics adjustments, risks, next steps
+- **`signals.csv`** / `signals_raw.csv` — sourced [Signal Rows](docs/data-contract.md#signal-row) + raw provenance log
+- **`company_profile.json`** — extracted company profile
+- **`trace.json`** — Scout's live reasoning trace
 
-Submit a fork of this repository that contains:
+## Documentation
 
-- Your code, scripts, notebooks, app, dashboard, API, or workflow.
-- A completed [`SUBMISSION.md`](SUBMISSION.md).
-- Clear setup and run instructions.
-- Evidence sources used by your system, including URLs where possible.
-- A ranked list of detected opportunities with confidence, risks, and next actions.
-- An explanation or visualization of your dashboard or tool.
-- Optional but encouraged: a short video walkthrough of your tool or dashboard.
+- [`SUBMISSION.md`](SUBMISSION.md) — full writeup: approach, run modes, ranked opportunities, evidence trail
+- [`docs/data-contract.md`](docs/data-contract.md) — Signal Row & Recommendation Row schemas
+- [`docs/evaluation.md`](docs/evaluation.md) — judging rubric
+- [`Source/Agents/decision_agent/design.txt`](Source/Agents/decision_agent/design.txt) — Agent 2 design notes
 
-Do not commit API keys, passwords, tokens, private datasets, or other secrets.
+## Tech
 
-## Submission Process
+Python · [Anthropic Claude](https://www.anthropic.com) (`claude-opus-4-8`) with `web_search` ·
+Streamlit · pandas · pytrends. Source APIs (Google Trends, Reddit, GDELT) are free and
+no-auth; only the Anthropic API needs a key.
 
-1. Fork this repository into your own GitHub account or team organization.
-2. Build your solution in the fork.
-3. Update [`SUBMISSION.md`](SUBMISSION.md) with your team name, approach, run instructions, outputs, and demo links.
-4. Push all final work to your fork before 16:30 CEST on June 19, 2026.
-5. Submit the fork URL through the channel or form announced by the organizers.
+---
 
-The jury will review the code and submission artifacts from your fork.
-
-## What You Can Build
-
-You can build any useful part of the opportunity-detection system. Pick the part where your team can create the most leverage:
-
-- Custom research agents or scripts.
-- Scrapers for retailer, marketplace, social, or publication sources.
-- Dashboards or review UIs for ranking signals.
-- Notebooks for scoring, clustering, or enrichment.
-- APIs that expose normalized results.
-- Evidence deduplication, source credibility, or opportunity-scoring tools.
-- Report generators that convert structured evidence into a business-ready recommendation.
-
-Pick one direction and make it work well. One useful capability that runs live is better than four half-finished ideas.
-
-A strong demo does not need to replace the whole flow. Improving one source, analysis step, scoring module, API, UI, or handoff artifact can be enough if the result is reusable and well demonstrated.
-
-## Demo Target
-
-By the end, the jury should be able to open your fork and understand:
-
-- What product, material, or brand opportunity your system found.
-- Why the opportunity matters now.
-- Which sources support it.
-- Whether it can realistically work in Switzerland or DACH.
-- What the retailer should test next.
-- How your approach could run again for another category or market.
-
-For the final session, be ready to present a short live demo and answer questions. Keep the demo focused on what works: the jury can inspect technical depth from your fork, code, data, and artifacts.
-
-## Suggested Evidence Sources
-
-Combine multiple signal types where possible:
-
-- Web research: publications, brand pages, retailer listings, forums, outdoor events, market articles.
-- Search trends: search momentum, rising queries, local vocabulary, and market comparisons.
-- Social signals: creator visibility, hashtags, product usage, and weak lifestyle signals.
-- Marketplace or competitor scans: product formats, brands, prices, bestseller or ranking hints, and assortment examples.
-- Participant/custom data: scraper output, API pulls, notebooks, manual store checks, CSV files, or Google Sheets.
-
-See [`docs/data-contract.md`](docs/data-contract.md) for a recommended output schema.
-
-## Evaluation
-
-The jury will evaluate:
-
-- Signal detection: can the system find a real emerging product, material, or brand opportunity from messy sources?
-- Evidence quality: are trends backed by sources, not guesses?
-- Transferability: does the system reason whether a global trend can work in Switzerland or DACH?
-- Business actionability: does the output lead to a clear retail decision?
-- Reusability: could the same flow be reused for another industry, market, or category with input changes?
-- Technical architecture: is the system robust, understandable, and practical to run during the hackathon?
-
-More detail is available in [`docs/evaluation.md`](docs/evaluation.md).
-
-## Organizers And Partners
-
-- Organizers: Zenline AI, HerCode
-- Partners: Scandit, Miss Liquid
+<sub>Team **HappyCats** — Cheng, Sara, Quan · HerCode × Zenline Hackathon, June 2026.
+Decision-support output; review by a human buyer before acting.</sub>
