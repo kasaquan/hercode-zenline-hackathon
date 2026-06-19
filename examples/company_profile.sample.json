@@ -1,0 +1,26 @@
+{
+  "company_name": "Decathlon CH (sample fixture)",
+  "website": "https://www.decathlon.ch",
+  "active_markets": ["CH", "DE", "AT"],
+  "primary_cantons": ["ZH", "BE", "VD"],
+  "positioning": "mid-range",
+  "target_price_band": "mid (100-300)",
+  "customer_segments": ["family hikers", "trail runners", "ski tourers", "climbers"],
+  "current_product_categories": ["technical shells", "mid-weight packs", "boots", "nutrition"],
+  "current_assortment_gaps": "Lightweight trail running footwear and PFAS-free waterproofing",
+  "store_count": 12,
+  "distribution_model": "hybrid",
+  "target_gross_margin": "medium (25-40%)",
+  "innovation_appetite": "high",
+  "supply_chain_constraints": "Limited access to specialist ultralight suppliers",
+  "strategic_expansion_focus": "Lightweight trail running and ultralight backpacking systems",
+  "strategic_timeline": "Q3 2026 soft launch, full rollout 2027",
+  "strategic_rationale": "Growing demand among millennials and urban hikers; margin and differentiation opportunity",
+  "strategic_assortment_gaps": "Plated super-shoes, ultralight packs under 500g, modular kit systems, PFAS-free DWR shells",
+  "data_sources": ["website", "user_notes"],
+  "confidence_by_field": {
+    "strategic_expansion_focus": "high",
+    "current_assortment_gaps": "medium"
+  },
+  "extra": "Premium innovation appetite; willing to pilot specialist brands."
+}

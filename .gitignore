@@ -11,3 +11,8 @@ __pycache__/
 .DS_Store
 .ipynb_checkpoints/
 *.log
+
+# Generated run artifacts + API response cache (keep the dirs, ignore contents)
+out/*
+!out/.gitkeep
+data/cache/

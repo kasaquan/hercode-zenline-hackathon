@@ -15,11 +15,12 @@ import argparse
 import json
 import os
 from pathlib import Path
+from typing import List
 
 import anthropic
 
 from . import tools
-from .schema import write_signals
+from .schema import SignalRow, write_signals
 
 MODEL = "claude-opus-4-8"
 
@@ -79,7 +80,7 @@ def _load_env() -> None:
                 os.environ.setdefault(k.strip(), v.strip())
 
 
-def run(market: str, seeds: str, max_steps: int = 16) -> None:
+def run(market: str, seeds: str, max_steps: int = 16) -> List[SignalRow]:
     _load_env()
     client = anthropic.Anthropic()
     tools.reset()
@@ -136,10 +137,10 @@ def run(market: str, seeds: str, max_steps: int = 16) -> None:
         else:
             break
 
-    _persist(trace)
+    return _persist(trace)
 
 
-def _persist(trace) -> None:
+def _persist(trace) -> List[SignalRow]:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     emitted = tools.get_emitted_signals()
@@ -154,6 +155,9 @@ def _persist(trace) -> None:
 
     print(f"\nWrote {OUT_DIR}/signals.csv ({len(deliverable)} curated rows), "
           f"signals_raw.csv ({len(tools.get_raw_signals())} raw rows), trace.json")
+    # Return the curated rows so an orchestrator can consume them in-memory
+    # (the downstream Decision agent avoids re-parsing signals.csv).
+    return deliverable
 
 
 def main() -> None:
